@@ -17,8 +17,10 @@
 
                                         public int DueSoonThresholdMinutes { get; set; } = 60;
 
-                public bool PlaySound { get; set; } = true;
+        public bool PlaySound { get; set; } = true;
 
-                public bool ShowToast { get; set; } = true;
+        public bool ShowToast { get; set; } = true;
+
+        public bool EmailEnabled { get; set; } = false;
     }
 }

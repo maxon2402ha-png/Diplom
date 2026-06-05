@@ -19,7 +19,7 @@
 
         <Style x:Key="PrimaryButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Brush.Primary}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextOnPrimary}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Height" Value="44"/>
@@ -256,12 +256,14 @@
                         </StackPanel>
 
                         <TextBlock Text="Имя и Фамилия" Style="{StaticResource FieldLabel}"/>
-                        <TextBox x:Name="FullNameBox" Margin="0,0,0,20" TabIndex="0"/>
+                        <TextBox x:Name="FullNameBox" Margin="0,0,0,4" TabIndex="0"/>
+                        <TextBlock x:Name="FullNameError" Style="{DynamicResource FieldError}" Margin="0,0,0,16"/>
 
                         <TextBlock Text="Логин" Style="{StaticResource FieldLabel}"/>
-                        <TextBox x:Name="UsernameBox" Margin="0,0,0,20" TabIndex="2"/>
+                        <TextBox x:Name="UsernameBox" Margin="0,0,0,4" TabIndex="2"/>
+                        <TextBlock x:Name="UsernameError" Style="{DynamicResource FieldError}" Margin="0,0,0,16"/>
 
-                        <Grid Margin="0,0,0,20">
+                        <Grid Margin="0,0,0,4">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="16"/>
@@ -277,6 +279,15 @@
                                 <TextBlock Text="Повторите пароль" Style="{StaticResource FieldLabel}"/>
                                 <PasswordBox x:Name="ConfirmPasswordBox" PasswordChanged="ConfirmPasswordBox_PasswordChanged" TabIndex="4"/>
                             </StackPanel>
+                        </Grid>
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" x:Name="PasswordError" Style="{DynamicResource FieldError}"/>
+                            <TextBlock Grid.Column="2" x:Name="ConfirmPasswordError" Style="{DynamicResource FieldError}"/>
                         </Grid>
 
                         <Grid Margin="0,0,0,8">

@@ -21,7 +21,7 @@
 
         <Style x:Key="PrimaryButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Brush.Primary}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextOnPrimary}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Height" Value="40"/>
@@ -124,7 +124,7 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="track" Property="Background" Value="{StaticResource Brush.Primary}"/>
+                                <Setter TargetName="track" Property="Background" Value="{DynamicResource Brush.Primary}"/>
                                 <Setter TargetName="thumb" Property="HorizontalAlignment" Value="Right"/>
                                 <Setter TargetName="thumb" Property="Margin" Value="0,0,2,0"/>
                             </Trigger>
@@ -271,8 +271,8 @@
                                 <TextBlock x:Name="DisplayNameText" Text="Иван Петров" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource Brush.TextPrimary}"/>
                                 <TextBlock x:Name="UsernameText" Text="@ivan.petrov" FontSize="13" Foreground="{DynamicResource Brush.TextSecondary}" Margin="0,2,0,8"/>
 
-                                <Border x:Name="RoleBadge" Background="#EFF6FF" CornerRadius="4" Padding="8,4" HorizontalAlignment="Left">
-                                    <TextBlock x:Name="RoleText" Text="Администратор" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Brush.Primary}"/>
+                                <Border x:Name="RoleBadge" Background="{DynamicResource Brush.PrimaryLight}" CornerRadius="4" Padding="8,4" HorizontalAlignment="Left">
+                                    <TextBlock x:Name="RoleText" Text="Администратор" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Primary}"/>
                                 </Border>
                             </StackPanel>
                         </Grid>
@@ -393,10 +393,10 @@
                         <PasswordBox x:Name="ConfirmPassBox" PasswordChanged="ConfirmPassBox_PasswordChanged" Margin="0,0,0,6"/>
 
                         <StackPanel x:Name="PasswordMatchPanel" Orientation="Horizontal" Visibility="Collapsed" Margin="0,0,0,12">
-                            <Border x:Name="PasswordMatchIcon" Width="14" Height="14" CornerRadius="7" Background="#10B981" Margin="0,0,6,0">
+                            <Border x:Name="PasswordMatchIcon" Width="14" Height="14" CornerRadius="7" Background="{DynamicResource Brush.Success}" Margin="0,0,6,0">
                                 <Path Data="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" Fill="White" Width="8" Height="8" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock x:Name="PasswordMatchText" Text="Пароли совпадают" Foreground="#10B981" FontSize="11"/>
+                            <TextBlock x:Name="PasswordMatchText" Text="Пароли совпадают" Foreground="{DynamicResource Brush.Success}" FontSize="11"/>
                         </StackPanel>
 
                         <Button x:Name="ChangePasswordButton" Content="Обновить пароль" Click="ChangePassword_Click" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Left" IsEnabled="False"/>

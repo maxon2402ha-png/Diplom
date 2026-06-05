@@ -23,6 +23,9 @@ namespace КР_Ханников.Data
         public DbSet<NotificationSettings> NotificationSettings { get; set; }
         public DbSet<SearchPreset> SearchPresets { get; set; }
         public DbSet<UserUiSettings> UserUiSettings { get; set; }
+        public DbSet<TicketAttachment> TicketAttachments { get; set; }
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+        public DbSet<MlModelMetrics> MlModelMetrics { get; set; }
 
         static AppDbContext()
         {
@@ -87,6 +90,8 @@ namespace КР_Ханников.Data
                 entity.Property(u => u.AvatarPath).HasMaxLength(500);
                 entity.Property(u => u.Email).HasMaxLength(100);
                 entity.Property(u => u.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(u => u.FailedLoginAttempts).HasDefaultValue(0);
+                entity.Property(u => u.MustChangePassword).HasDefaultValue(false);
                 entity.Ignore(u => u.Employee);
                 entity.Ignore(u => u.Client);
             });
@@ -152,6 +157,15 @@ namespace КР_Ханников.Data
                 entity.HasKey(k => k.Id);
                 entity.Property(k => k.Title).IsRequired().HasMaxLength(200);
                 entity.Property(k => k.Content).IsRequired();
+                entity.Property(k => k.ViewCount).HasDefaultValue(0);
+                entity.Property(k => k.HelpfulCount).HasDefaultValue(0);
+                entity.Property(k => k.NotHelpfulCount).HasDefaultValue(0);
+            });
+
+            modelBuilder.Entity<MlModelMetrics>(entity =>
+            {
+                entity.HasKey(m => m.Id);
+                entity.Property(m => m.ModelType).IsRequired().HasMaxLength(50);
             });
 
             modelBuilder.Entity<AuditLog>(entity =>
@@ -208,6 +222,35 @@ namespace КР_Ханников.Data
                 entity.Property(x => x.TextQuery).HasMaxLength(500);
                 entity.Property(x => x.Status).HasMaxLength(50);
                 entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<TicketAttachment>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.FileName).IsRequired().HasMaxLength(255);
+                entity.Property(a => a.StoredFilePath).IsRequired().HasMaxLength(500);
+                entity.Property(a => a.ContentType).HasMaxLength(100);
+                entity.HasOne(a => a.Ticket).WithMany(t => t.Attachments).HasForeignKey(a => a.TicketId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(a => a.UploadedByUser).WithMany().HasForeignKey(a => a.UploadedByUserId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<PasswordResetToken>(entity =>
+            {
+                entity.HasKey(p => p.Id);
+                entity.Property(p => p.Token).IsRequired().HasMaxLength(128);
+                entity.HasIndex(p => p.Token).IsUnique();
+                entity.HasOne(p => p.User).WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Ticket>(entity =>
+            {
+                entity.Property(t => t.IsOverdue).HasDefaultValue(false);
+                entity.Property(t => t.NotifiedAboutDeadline).HasDefaultValue(false);
+            });
+
+            modelBuilder.Entity<NotificationSettings>(entity =>
+            {
+                entity.Property(s => s.EmailEnabled).HasDefaultValue(false);
             });
 
             modelBuilder.Entity<UserUiSettings>(entity =>

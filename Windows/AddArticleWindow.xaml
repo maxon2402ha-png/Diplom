@@ -14,7 +14,7 @@
     <Window.Resources>
         <Style x:Key="BtnPrimary" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Brush.Primary}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextOnPrimary}"/>
             <Setter Property="Padding" Value="24,10"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="14"/>
@@ -168,9 +168,10 @@
                                    Foreground="{DynamicResource Brush.TextPrimary}" 
                                    FontWeight="SemiBold" 
                                    Margin="0,0,0,8"/>
-                        <TextBox x:Name="TitleBox" 
+                        <TextBox x:Name="TitleBox"
                                  Style="{StaticResource InputControl}"
                                  ToolTip="Кратко и понятно сформулируйте тему"/>
+                        <TextBlock x:Name="TitleError" Style="{DynamicResource FieldError}"/>
                     </StackPanel>
 
                     <Grid Grid.Row="1">
@@ -185,12 +186,14 @@
                                    FontWeight="SemiBold" 
                                    Margin="0,0,0,8"/>
 
-                        <TextBox x:Name="ContentBox" 
-                                 Grid.Row="1"
-                                 Style="{StaticResource MultilineInputControl}"
-                                 VerticalAlignment="Stretch"
-                                 MinHeight="200"
-                                 ToolTip="Опишите решение проблемы по шагам"/>
+                        <StackPanel Grid.Row="1">
+                            <TextBox x:Name="ContentBox"
+                                     Style="{StaticResource MultilineInputControl}"
+                                     VerticalAlignment="Stretch"
+                                     MinHeight="200"
+                                     ToolTip="Опишите решение проблемы по шагам"/>
+                            <TextBlock x:Name="ContentError" Style="{DynamicResource FieldError}"/>
+                        </StackPanel>
                     </Grid>
                 </Grid>
 

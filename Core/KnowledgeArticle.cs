@@ -19,8 +19,11 @@ namespace КР_Ханников.Data
 
         [ForeignKey("AuthorId")]
 
-
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        public int ViewCount { get; set; } = 0;
+        public int HelpfulCount { get; set; } = 0;
+        public int NotHelpfulCount { get; set; } = 0;
     }
 }

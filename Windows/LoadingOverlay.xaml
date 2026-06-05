@@ -1,0 +1,50 @@
+<UserControl x:Class="КР_Ханников.Windows.LoadingOverlay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#80FFFFFF"
+             Visibility="Collapsed"
+             IsHitTestVisible="True">
+    <UserControl.Resources>
+        <Storyboard x:Key="SpinAnimation" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetName="SpinnerTransform"
+                             Storyboard.TargetProperty="Angle"
+                             From="0" To="360" Duration="0:0:1.2"/>
+        </Storyboard>
+    </UserControl.Resources>
+
+    <!-- Анимация спиннера запускается/останавливается из кода в Show()/Hide()
+         (LoadingOverlay.xaml.cs). Storyboard с TargetName нельзя держать в Style,
+         а IsVisibleChanged — не RoutedEvent, поэтому EventTrigger здесь не подходит. -->
+
+
+    <Border Background="{DynamicResource Brush.Surface}"
+            CornerRadius="10"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Padding="32,24"
+            BorderBrush="{DynamicResource Brush.Border}"
+            BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="20" Opacity="0.18" ShadowDepth="0" Color="Black"/>
+        </Border.Effect>
+        <StackPanel Orientation="Horizontal">
+            <Grid Width="28" Height="28" Margin="0,0,16,0">
+                <Ellipse Stroke="{DynamicResource Brush.Border}" StrokeThickness="3"/>
+                <Path Stroke="{DynamicResource Brush.Primary}" StrokeThickness="3"
+                      Data="M 14 0 A 14 14 0 0 1 28 14"
+                      RenderTransformOrigin="0.5,0.5">
+                    <Path.RenderTransform>
+                        <RotateTransform x:Name="SpinnerTransform" Angle="0"/>
+                    </Path.RenderTransform>
+                </Path>
+            </Grid>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock x:Name="TitleText" Text="Загрузка..." FontWeight="SemiBold" FontSize="14"
+                           Foreground="{DynamicResource Brush.TextPrimary}"/>
+                <TextBlock x:Name="MessageText" Text="" FontSize="12"
+                           Foreground="{DynamicResource Brush.TextSecondary}" Margin="0,2,0,0"
+                           Visibility="Collapsed"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

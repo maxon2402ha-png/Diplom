@@ -1,11 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using КР_Ханников.Core;
@@ -18,13 +19,21 @@ namespace КР_Ханников.Windows
     public partial class CreateTicketWindow : Window
     {
         private readonly AuthService _authService;
-        private string? _attachedFilePath;
+
+        private class PendingFile
+        {
+            public string FilePath { get; set; } = string.Empty;
+            public string FileName { get; set; } = string.Empty;
+            public long FileSize { get; set; }
+            public string SizeLabel => AttachmentService.FormatSize(FileSize);
+        }
+
+        private readonly List<PendingFile> _pendingFiles = new();
 
         public CreateTicketWindow(AuthService authService)
         {
             InitializeComponent();
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
-
             Loaded += (s, e) => TitleTextBox.Focus();
         }
 
@@ -36,25 +45,95 @@ namespace КР_Ханников.Windows
 
         private void AttachFile_Click(object sender, RoutedEventArgs e)
         {
-            var openFileDialog = new OpenFileDialog
+            PickFiles();
+        }
+
+        private void DropZone_Click(object sender, MouseButtonEventArgs e)
+        {
+            PickFiles();
+        }
+
+        private void DropZone_DragOver(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
-                Filter = "Файлы|*.pdf;*.docx;*.xlsx;*.txt;*.jpg;*.png",
-                Title = "Выберите файл"
+                e.Effects = DragDropEffects.Copy;
+                DropZone.BorderBrush = FindResource("Brush.Primary") as Brush;
+            }
+            else
+            {
+                e.Effects = DragDropEffects.None;
+            }
+            e.Handled = true;
+        }
+
+        private void DropZone_DragLeave(object sender, DragEventArgs e)
+        {
+            DropZone.BorderBrush = FindResource("Brush.Border") as Brush;
+        }
+
+        private void DropZone_Drop(object sender, DragEventArgs e)
+        {
+            DropZone.BorderBrush = FindResource("Brush.Border") as Brush;
+
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            foreach (var f in files)
+                TryAddFile(f);
+
+            RefreshFileList();
+        }
+
+        private void PickFiles()
+        {
+            var dlg = new OpenFileDialog
+            {
+                Multiselect = true,
+                Filter = "Поддерживаемые файлы|*.png;*.jpg;*.jpeg;*.pdf;*.log;*.txt;*.docx;*.xlsx;*.zip",
+                Title = "Выберите файлы"
             };
 
-            if (openFileDialog.ShowDialog() == true)
-            {
-                var fileInfo = new FileInfo(openFileDialog.FileName);
-                if (fileInfo.Length > 10 * 1024 * 1024)
-                {
-                    MessageBox.Show("Файл слишком большой. Максимальный размер 10 МБ.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+            if (dlg.ShowDialog() != true) return;
+            foreach (var f in dlg.FileNames)
+                TryAddFile(f);
 
-                _attachedFilePath = openFileDialog.FileName;
-                FileNameTextBlock.Text = Path.GetFileName(_attachedFilePath);
-                FileNameTextBlock.Foreground = System.Windows.Media.Brushes.Black;
+            RefreshFileList();
+        }
+
+        private void TryAddFile(string path)
+        {
+            if (_pendingFiles.Any(f => f.FilePath.Equals(path, StringComparison.OrdinalIgnoreCase)))
+                return;
+
+            var (ok, error) = AttachmentService.ValidateFile(path);
+            if (!ok)
+            {
+                MessageBox.Show($"{Path.GetFileName(path)}: {error}", "Файл не принят",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
+
+            _pendingFiles.Add(new PendingFile
+            {
+                FilePath = path,
+                FileName = Path.GetFileName(path),
+                FileSize = new FileInfo(path).Length
+            });
+        }
+
+        private void RemovePendingFile_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.Tag is PendingFile pf)
+            {
+                _pendingFiles.Remove(pf);
+                RefreshFileList();
+            }
+        }
+
+        private void RefreshFileList()
+        {
+            SelectedFilesList.ItemsSource = null;
+            SelectedFilesList.ItemsSource = _pendingFiles.ToList();
         }
 
         private async void Submit_Click(object sender, RoutedEventArgs e)
@@ -65,13 +144,31 @@ namespace КР_Ханников.Windows
 
                 if (currentUser == null || currentUser.Role != Constants.UserRoles.Client)
                 {
-                    MessageBox.Show("Создание тикетов доступно только для клиентов!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Создание тикетов доступно только для клиентов!", "Ошибка",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                if (string.IsNullOrWhiteSpace(TitleTextBox.Text) || string.IsNullOrWhiteSpace(DescriptionTextBox.Text))
+                TitleError.Visibility = Visibility.Collapsed;
+                DescriptionError.Visibility = Visibility.Collapsed;
+
+                bool invalid = false;
+                if (string.IsNullOrWhiteSpace(TitleTextBox.Text))
                 {
-                    MessageBox.Show("Пожалуйста, заполните Тему и Описание проблемы.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    TitleError.Text = "Укажите тему обращения";
+                    TitleError.Visibility = Visibility.Visible;
+                    invalid = true;
+                }
+                if (string.IsNullOrWhiteSpace(DescriptionTextBox.Text))
+                {
+                    DescriptionError.Text = "Опишите проблему";
+                    DescriptionError.Visibility = Visibility.Visible;
+                    invalid = true;
+                }
+                if (invalid)
+                {
+                    if (string.IsNullOrWhiteSpace(TitleTextBox.Text)) TitleTextBox.Focus();
+                    else DescriptionTextBox.Focus();
                     return;
                 }
 
@@ -85,9 +182,7 @@ namespace КР_Ханников.Windows
                     var date = DueDatePicker.SelectedDate.Value;
                     var timeText = string.IsNullOrWhiteSpace(DueTimeBox.Text) ? "18:00" : DueTimeBox.Text.Trim();
                     if (TimeSpan.TryParse(timeText, out var ts))
-                    {
                         due = date.Date.Add(ts).ToUniversalTime();
-                    }
                 }
 
                 using var db = App.CreateDbContext();
@@ -96,42 +191,30 @@ namespace КР_Ханников.Windows
 
                 var client = await db.Clients.FirstOrDefaultAsync(c => c.UserId == currentUser.Id);
 
-                                                var newTicket = await ticketService.CreateAsync(
+                var newTicket = await ticketService.CreateAsync(
                     clientId: client!.Id,
                     title: TitleTextBox.Text.Trim(),
                     description: DescriptionTextBox.Text.Trim(),
                     manualDueAt: due,
-                    authorUserId: currentUser.Id
-                );
+                    authorUserId: currentUser.Id);
 
-                                if (!string.IsNullOrEmpty(_attachedFilePath) && File.Exists(_attachedFilePath))
+                foreach (var pf in _pendingFiles)
                 {
                     try
                     {
-                        var attachmentsDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "КР_Ханников", "Attachments");
-                        if (!Directory.Exists(attachmentsDir)) Directory.CreateDirectory(attachmentsDir);
-
-                        var extension = Path.GetExtension(_attachedFilePath);
-                        var fileName = $"{newTicket.Id}_{Guid.NewGuid()}{extension}";
-                        var destPath = Path.Combine(attachmentsDir, fileName);
-
-                        using (var sourceStream = new FileStream(_attachedFilePath, FileMode.Open, FileAccess.Read))
-                        using (var destStream = new FileStream(destPath, FileMode.Create, FileAccess.Write))
-                        {
-                            await sourceStream.CopyToAsync(destStream);
-                        }
-
-                        newTicket.AttachmentPath = destPath;
-                        newTicket.AttachmentFileName = Path.GetFileName(_attachedFilePath);
-                        await db.SaveChangesAsync();
+                        await AttachmentService.SaveAsync(pf.FilePath, newTicket.Id, currentUser.Id, db);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Serilog.Log.Warning(ex, "Не удалось сохранить вложение {File}", pf.FileName);
+                    }
                 }
 
                 notificationService.NotifyOperatorsAboutNewTicket(newTicket);
 
-                                MessageBox.Show($"Тикет #{newTicket.Id} успешно создан!\n\n✨ Нейросеть обработала заявку:\nКатегория: {newTicket.Category}\nПриоритет: {newTicket.Priority}",
-                                "Успешно создано", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(
+                    $"Тикет #{newTicket.Id} успешно создан!\n\n✨ Нейросеть обработала заявку:\nКатегория: {newTicket.Category}\nПриоритет: {newTicket.Priority}",
+                    "Успешно создано", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 DialogResult = true;
                 Close();

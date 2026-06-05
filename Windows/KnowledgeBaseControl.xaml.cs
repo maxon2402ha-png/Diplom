@@ -88,21 +88,37 @@ namespace КР_Ханников.Windows
         private void SearchTimer_Tick(object? sender, EventArgs e)
         {
             _searchTimer.Stop();
+            ApplyFilterAndSort();
+        }
 
-            var query = SearchBox.Text?.Trim().ToLower() ?? "";
+        private void SortCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_allArticles.Count == 0) return;
+            ApplyFilterAndSort();
+        }
 
-            if (string.IsNullOrWhiteSpace(query))
+        private void ApplyFilterAndSort()
+        {
+            var query = SearchBox?.Text?.Trim().ToLower() ?? "";
+
+            IEnumerable<KnowledgeArticle> result = _allArticles;
+
+            if (!string.IsNullOrWhiteSpace(query))
             {
-                UpdateGridSource(_allArticles);
-            }
-            else
-            {
-                var filtered = _allArticles.Where(a =>
+                result = result.Where(a =>
                     (a.Title != null && a.Title.ToLower().Contains(query)) ||
-                    (a.Content != null && a.Content.ToLower().Contains(query))
-                );
-                UpdateGridSource(filtered);
+                    (a.Content != null && a.Content.ToLower().Contains(query)));
             }
+
+            var sortIndex = SortCombo?.SelectedIndex ?? 0;
+            result = sortIndex switch
+            {
+                1 => result.OrderByDescending(a => a.ViewCount).ThenByDescending(a => a.UpdatedAt),
+                2 => result.OrderByDescending(a => a.HelpfulCount - a.NotHelpfulCount).ThenByDescending(a => a.UpdatedAt),
+                _ => result.OrderByDescending(a => a.UpdatedAt)
+            };
+
+            UpdateGridSource(result);
         }
 
                 private void ArticlesList_SelectionChanged(object sender, SelectionChangedEventArgs e)

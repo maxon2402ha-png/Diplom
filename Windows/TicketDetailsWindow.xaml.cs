@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using КР_Ханников.Core;
 using КР_Ханников.Data;
@@ -42,6 +43,34 @@ namespace КР_Ханников.Windows
             public bool IsMe { get; set; }
             public bool IsInternal { get; set; }
             public string Role { get; set; } = "Client";
+        }
+
+        public class AttachmentViewModel
+        {
+            public int Id { get; set; }
+            public string FileName { get; set; } = string.Empty;
+            public string StoredFilePath { get; set; } = string.Empty;
+            public long FileSize { get; set; }
+            public bool IsImage { get; set; }
+            public bool CanDelete { get; set; }
+            public int UploadedByUserId { get; set; }
+            public string SizeLabel => AttachmentService.FormatSize(FileSize);
+            public string Icon => IsImage ? "🖼" : GetFileIcon(FileName);
+            public BitmapImage? ImageSource { get; set; }
+
+            private static string GetFileIcon(string fileName)
+            {
+                var ext = Path.GetExtension(fileName).ToLowerInvariant();
+                return ext switch
+                {
+                    ".pdf" => "📄",
+                    ".docx" or ".doc" => "📝",
+                    ".xlsx" or ".xls" => "📊",
+                    ".zip" => "🗜",
+                    ".txt" or ".log" => "📃",
+                    _ => "📎"
+                };
+            }
         }
 
         public TicketDetailsWindow(int ticketId) : this(ticketId, new AppDbContext(), null!) { }
@@ -88,6 +117,7 @@ namespace КР_Ханников.Windows
                     .Include(x => x.Feedback)
                     .Include(x => x.Comments).ThenInclude(c => c.Author)
                     .Include(x => x.History)
+                    .Include(x => x.Attachments)
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Id == _ticketId);
 
@@ -132,6 +162,7 @@ namespace КР_Ханников.Windows
                 ConfigureAccessAndState();
                 LoadComments();
                 LoadHistory();
+                _ = LoadRecommendationsAsync();
             }
             catch (Exception ex)
             {
@@ -150,9 +181,10 @@ namespace КР_Ханников.Windows
 
             bool isClient = user.Role == Constants.UserRoles.Client;
             bool isClosed = _ticket.Status == Constants.TicketStatus.Closed;
+            bool isResolved = _ticket.Status == Constants.TicketStatus.Resolved;
             bool isSupport = user.Role == Constants.UserRoles.Support || user.Role == Constants.UserRoles.Admin;
 
-                        OperatorControlsPanel.Visibility = (isSupport && !isClosed) ? Visibility.Visible : Visibility.Collapsed;
+            OperatorControlsPanel.Visibility = (isSupport && !isClosed && !isResolved) ? Visibility.Visible : Visibility.Collapsed;
             InternalCheck.Visibility = isSupport ? Visibility.Visible : Visibility.Collapsed;
             InternalCheck.IsChecked = false;
 
@@ -161,8 +193,16 @@ namespace КР_Ханников.Windows
                 CloseTicketButton.Visibility = Visibility.Collapsed;
                 EditButton.Visibility = Visibility.Collapsed;
 
-                if (isClosed)
+                if (isResolved && FindName("ClientConfirmPanel") is System.Windows.Controls.Border confirmPanel)
                 {
+                    confirmPanel.Visibility = Visibility.Visible;
+                    RateButton.Visibility = Visibility.Collapsed;
+                }
+                else if (isClosed)
+                {
+                    if (FindName("ClientConfirmPanel") is System.Windows.Controls.Border cp2)
+                        cp2.Visibility = Visibility.Collapsed;
+
                     RateButton.Visibility = Visibility.Visible;
                     if (_ticket.Feedback != null)
                     {
@@ -178,12 +218,16 @@ namespace КР_Ханников.Windows
                 else
                 {
                     RateButton.Visibility = Visibility.Collapsed;
+                    if (FindName("ClientConfirmPanel") is System.Windows.Controls.Border cp3)
+                        cp3.Visibility = Visibility.Collapsed;
                 }
             }
             else
             {
                 RateButton.Visibility = Visibility.Collapsed;
-                CloseTicketButton.Visibility = isClosed ? Visibility.Collapsed : Visibility.Visible;
+                if (FindName("ClientConfirmPanel") is System.Windows.Controls.Border cp4)
+                    cp4.Visibility = Visibility.Collapsed;
+                CloseTicketButton.Visibility = (isClosed || isResolved) ? Visibility.Collapsed : Visibility.Visible;
             }
         }
 
@@ -293,6 +337,61 @@ namespace КР_Ханников.Windows
         private void LoadHistory()
         {
             HistoryGrid.ItemsSource = _ticket.History.OrderByDescending(h => h.Timestamp).ToList();
+        }
+
+        private async Task LoadRecommendationsAsync()
+        {
+            // Показываем только клиенту, и только пока нет решения
+            var user = _authService.CurrentUser;
+            if (user == null || user.Role != Constants.UserRoles.Client) return;
+            if (_ticket.Solution != null) return;
+
+            try
+            {
+                RecommendationsPanel.Visibility = Visibility.Visible;
+                RecommendationsLoadingText.Visibility = Visibility.Visible;
+                RecommendationsList.ItemsSource = null;
+
+                List<RecommendedArticle> recommendations;
+                using (var db = App.CreateDbContext())
+                {
+                    var svc = new ArticleRecommendationService(db);
+                    recommendations = await Task.Run(() =>
+                        svc.RecommendAsync(_ticket.Title, _ticket.Description ?? "", 5).GetAwaiter().GetResult());
+                }
+
+                RecommendationsLoadingText.Visibility = Visibility.Collapsed;
+
+                if (recommendations.Count == 0)
+                {
+                    RecommendationsPanel.Visibility = Visibility.Collapsed;
+                }
+                else
+                {
+                    RecommendationsList.ItemsSource = recommendations;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Recommendations] {ex.Message}");
+                RecommendationsPanel.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void RecommendedArticle_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.Tag is KnowledgeArticle article)
+            {
+                try
+                {
+                    var wnd = new ArticleDetailsWindow(article, _authService.CurrentUser?.Id) { Owner = this };
+                    wnd.ShowDialog();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Не удалось открыть статью: {ex.Message}", "Ошибка");
+                }
+            }
         }
 
         private async void SendComment_Click(object sender, RoutedEventArgs e)
@@ -412,9 +511,9 @@ namespace КР_Ханников.Windows
         private async void CloseTicket_Click(object sender, RoutedEventArgs e)
         {
             string resolutionText = Interaction.InputBox(
-                "Введите финальное решение по заявке для клиента:",
+                "Введите описание решения для клиента:",
                 "Решение заявки",
-                "Вопрос решен штатным образом.");
+                "Вопрос решён штатным образом.");
 
             if (string.IsNullOrWhiteSpace(resolutionText))
                 return;
@@ -426,31 +525,30 @@ namespace КР_Ханников.Windows
                 if (t != null)
                 {
                     var oldStatus = t.Status;
-                    t.Status = Constants.TicketStatus.Closed;
-                    t.ClosedAt = DateTime.UtcNow;
+                    t.Status = Constants.TicketStatus.Resolved;
+                    t.ClientConfirmationDeadline = DateTime.UtcNow.AddHours(72);
 
-                    var sol = new Solution
+                    db.Solutions.Add(new Solution
                     {
                         TicketId = _ticketId,
                         ResolutionText = resolutionText,
                         ResolutionDate = DateTime.UtcNow
-                    };
-                    db.Solutions.Add(sol);
+                    });
 
                     db.TicketHistories.Add(new TicketHistory
                     {
                         TicketId = _ticketId,
-                        Action = "Закрытие",
-                        Details = $"Статус: {oldStatus} -> Closed",
+                        Action = "Отмечен решённым",
+                        Details = $"Статус: {oldStatus} → Resolved. Ждём подтверждения клиента (72 ч).",
                         Timestamp = DateTime.UtcNow
                     });
 
                     await db.SaveChangesAsync();
-                    _notificationService.NotifyStatusChanged(t, oldStatus, Constants.TicketStatus.Closed);
+                    _notificationService.NotifyStatusChanged(t, oldStatus, Constants.TicketStatus.Resolved);
 
                     await LoadTicketDataAsync();
-                    MessageBox.Show("Тикет успешно решён", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                    DialogResult = true;
+                    MessageBox.Show("Тикет помечен как решённый.\nКлиент может подтвердить в течение 72 часов.",
+                        "Готово", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
@@ -470,18 +568,8 @@ namespace КР_Ханников.Windows
 
         private async void Rate_Click(object sender, RoutedEventArgs e)
         {
-            string ratingStr = Interaction.InputBox("Оцените качество работы специалиста (от 1 до 5):", "Оценка качества", "5");
-
-            if (string.IsNullOrWhiteSpace(ratingStr))
-                return;
-
-            if (!int.TryParse(ratingStr, out int rating) || rating < 1 || rating > 5)
-            {
-                MessageBox.Show("Оценка должна быть числом от 1 до 5.", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            string comment = Interaction.InputBox("Ваш комментарий (по желанию):", "Отзыв", "");
+            var ratingWnd = new FeedbackRatingWindow { Owner = this };
+            if (ratingWnd.ShowDialog() != true || ratingWnd.Rating == 0) return;
 
             try
             {
@@ -491,15 +579,14 @@ namespace КР_Ханников.Windows
                     TicketId = _ticketId,
                     ClientId = _ticket.ClientId,
                     SupportId = _ticket.AssigneeEmployeeId,
-                    Rating = rating,
-                    Comment = comment,
+                    Rating = ratingWnd.Rating,
+                    Comment = ratingWnd.Comment,
                     CreatedAt = DateTime.UtcNow
                 };
-
                 db.Feedbacks.Add(feedback);
                 await db.SaveChangesAsync();
 
-                MessageBox.Show("Спасибо за ваш отзыв!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Спасибо за ваш отзыв!", "Готово", MessageBoxButton.OK, MessageBoxImage.Information);
                 await LoadTicketDataAsync();
             }
             catch (Exception ex)
@@ -508,15 +595,156 @@ namespace КР_Ханников.Windows
             }
         }
 
+        private async void ConfirmResolution_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                using var db = App.CreateDbContext();
+                var t = await db.Tickets.FindAsync(_ticketId);
+                if (t == null) return;
+
+                var oldStatus = t.Status;
+                t.Status = Constants.TicketStatus.Closed;
+                t.ClosedAt = DateTime.UtcNow;
+                t.ClientConfirmationDeadline = null;
+
+                db.TicketHistories.Add(new TicketHistory
+                {
+                    TicketId = _ticketId,
+                    Action = "Подтверждение клиентом",
+                    Details = "Клиент подтвердил решение тикета.",
+                    Timestamp = DateTime.UtcNow
+                });
+
+                await db.SaveChangesAsync();
+                _notificationService.NotifyStatusChanged(t, oldStatus, Constants.TicketStatus.Closed);
+                await LoadTicketDataAsync();
+
+                var ratingWnd = new FeedbackRatingWindow { Owner = this };
+                if (ratingWnd.ShowDialog() == true && ratingWnd.Rating > 0)
+                {
+                    using var db2 = App.CreateDbContext();
+                    db2.Feedbacks.Add(new Feedback
+                    {
+                        TicketId = _ticketId,
+                        ClientId = _ticket.ClientId,
+                        SupportId = _ticket.AssigneeEmployeeId,
+                        Rating = ratingWnd.Rating,
+                        Comment = ratingWnd.Comment,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    await db2.SaveChangesAsync();
+                    await LoadTicketDataAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка: {ex.Message}");
+            }
+        }
+
+        private async void RejectResolution_Click(object sender, RoutedEventArgs e)
+        {
+            var commentWnd = new AddCommentWindow { Owner = this };
+            commentWnd.Title = "Укажите причину отклонения";
+            if (commentWnd.ShowDialog() != true) return;
+
+            var rejectReason = commentWnd.CommentText;
+            if (string.IsNullOrWhiteSpace(rejectReason))
+            {
+                MessageBox.Show("Необходимо указать причину.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                using var db = App.CreateDbContext();
+                var t = await db.Tickets.FindAsync(_ticketId);
+                if (t == null) return;
+
+                var oldStatus = t.Status;
+                t.Status = Constants.TicketStatus.InProgress;
+                t.ClientConfirmationDeadline = null;
+
+                db.TicketHistories.Add(new TicketHistory
+                {
+                    TicketId = _ticketId,
+                    Action = "Отклонение клиентом",
+                    Details = $"Клиент отклонил решение. Причина: {rejectReason}",
+                    Timestamp = DateTime.UtcNow
+                });
+
+                db.TicketComments.Add(new TicketComment
+                {
+                    TicketId = _ticketId,
+                    UserId = _authService.CurrentUser!.Id,
+                    Text = $"[Отклонение] {rejectReason}",
+                    IsInternal = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                await db.SaveChangesAsync();
+                _notificationService.NotifyStatusChanged(t, oldStatus, Constants.TicketStatus.InProgress);
+                await LoadTicketDataAsync();
+
+                MessageBox.Show("Тикет возвращён в работу.", "Готово", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка: {ex.Message}");
+            }
+        }
+
         private void CheckAttachment()
         {
-            bool hasFile = !string.IsNullOrEmpty(_ticket.AttachmentPath);
-            AttachmentPanel.Visibility = hasFile ? Visibility.Visible : Visibility.Collapsed;
-            if (hasFile)
-            {
-                FileNameText.Text = _ticket.AttachmentFileName ?? "Файл";
-                AttachmentPanel.Tag = _ticket.AttachmentPath;
-            }
+            LoadAttachmentsList();
+        }
+
+        private void LoadAttachmentsList()
+        {
+            var currentUser = _authService.CurrentUser;
+            bool isAdmin = currentUser?.Role == Constants.UserRoles.Admin;
+
+            var viewModels = _ticket.Attachments
+                .OrderBy(a => a.UploadedAt)
+                .Select(a =>
+                {
+                    BitmapImage? img = null;
+                    if (AttachmentService.IsImage(a.FileName) && File.Exists(a.StoredFilePath))
+                    {
+                        try
+                        {
+                            img = new BitmapImage();
+                            img.BeginInit();
+                            img.UriSource = new Uri(a.StoredFilePath);
+                            img.DecodePixelWidth = 80;
+                            img.CacheOption = BitmapCacheOption.OnLoad;
+                            img.EndInit();
+                            img.Freeze();
+                        }
+                        catch { img = null; }
+                    }
+
+                    return new AttachmentViewModel
+                    {
+                        Id = a.Id,
+                        FileName = a.FileName,
+                        StoredFilePath = a.StoredFilePath,
+                        FileSize = a.FileSize,
+                        IsImage = AttachmentService.IsImage(a.FileName) && img != null,
+                        CanDelete = isAdmin || a.UploadedByUserId == currentUser?.Id,
+                        UploadedByUserId = a.UploadedByUserId,
+                        ImageSource = img
+                    };
+                })
+                .ToList();
+
+            AttachmentsList.ItemsSource = viewModels;
+            NoAttachmentsText.Visibility = viewModels.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+            bool isClosed = _ticket.Status == Constants.TicketStatus.Closed;
+            bool isClient = currentUser?.Role == Constants.UserRoles.Client;
+            AddAttachmentBtn.Visibility = isClosed ? Visibility.Collapsed : Visibility.Visible;
         }
 
         private void CheckSolution()
@@ -529,19 +757,90 @@ namespace КР_Ханников.Windows
             }
         }
 
-        private void OpenAttachment_Click(object sender, RoutedEventArgs e)
+        private void OpenAttachmentItem_Click(object sender, RoutedEventArgs e)
         {
+            if (sender is FrameworkElement fe && fe.Tag is AttachmentViewModel vm)
+            {
+                try
+                {
+                    if (!File.Exists(vm.StoredFilePath))
+                    {
+                        MessageBox.Show("Файл не найден на диске.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    Process.Start(new ProcessStartInfo { FileName = vm.StoredFilePath, UseShellExecute = true });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Не удалось открыть файл: {ex.Message}", "Ошибка");
+                }
+            }
+        }
+
+        private async void DeleteAttachment_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement fe || fe.Tag is not AttachmentViewModel vm) return;
+
+            var confirm = MessageBox.Show($"Удалить вложение «{vm.FileName}»?", "Подтверждение",
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (confirm != MessageBoxResult.Yes) return;
+
             try
             {
-                if (AttachmentPanel.Tag is string filePath && System.IO.File.Exists(filePath))
-                {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = filePath, UseShellExecute = true });
-                }
+                using var db = App.CreateDbContext();
+                var attachment = await db.TicketAttachments.FindAsync(vm.Id);
+                if (attachment != null)
+                    await AttachmentService.DeleteAsync(attachment, db);
+
+                await LoadTicketDataAsync();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Не удалось открыть файл: {ex.Message}", "Ошибка");
+                MessageBox.Show($"Ошибка удаления: {ex.Message}", "Ошибка");
             }
+        }
+
+        private async void AddAttachment_Click(object sender, RoutedEventArgs e)
+        {
+            var currentUser = _authService.CurrentUser;
+            if (currentUser == null) return;
+
+            var dlg = new OpenFileDialog
+            {
+                Multiselect = true,
+                Filter = "Поддерживаемые файлы|*.png;*.jpg;*.jpeg;*.pdf;*.log;*.txt;*.docx;*.xlsx;*.zip",
+                Title = "Выберите файлы"
+            };
+
+            if (dlg.ShowDialog() != true) return;
+
+            var errors = new List<string>();
+            using var db = App.CreateDbContext();
+
+            foreach (var filePath in dlg.FileNames)
+            {
+                var (ok, error) = AttachmentService.ValidateFile(filePath);
+                if (!ok)
+                {
+                    errors.Add($"{Path.GetFileName(filePath)}: {error}");
+                    continue;
+                }
+
+                try
+                {
+                    await AttachmentService.SaveAsync(filePath, _ticketId, currentUser.Id, db);
+                }
+                catch (Exception ex)
+                {
+                    errors.Add($"{Path.GetFileName(filePath)}: {ex.Message}");
+                }
+            }
+
+            if (errors.Count > 0)
+                MessageBox.Show(string.Join("\n", errors), "Некоторые файлы не приняты",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+
+            await LoadTicketDataAsync();
         }
 
         private void CloseWindow_Click(object sender, RoutedEventArgs e)

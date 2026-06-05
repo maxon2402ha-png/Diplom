@@ -17,7 +17,7 @@
 
         <Style x:Key="PrimaryButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Brush.Primary}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextOnPrimary}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Height" Value="38"/>
@@ -148,28 +148,42 @@
                     </Grid.RowDefinitions>
 
                     <Border Grid.Row="0" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,0,1" Padding="16">
-                        <Border CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource Brush.Border}" Background="{DynamicResource Brush.SurfaceAlt}" Height="38">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Path Grid.Column="0" Data="{StaticResource Icon.Search}" Fill="{DynamicResource Brush.TextSecondary}" Width="16" Height="16" Margin="12,0,8,0" Stretch="Uniform" VerticalAlignment="Center"/>
-                                <TextBox x:Name="SearchBox" Grid.Column="1" BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center" FontSize="13" Foreground="{DynamicResource Brush.TextPrimary}" TextChanged="SearchBox_TextChanged"/>
-                                <TextBlock Grid.Column="1" Text="Поиск статей..." Foreground="{DynamicResource Brush.TextMuted}" FontSize="13" VerticalAlignment="Center" Margin="0,0,12,0" IsHitTestVisible="False">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
-                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                            </Grid>
-                        </Border>
+                        <StackPanel>
+                            <Border CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource Brush.Border}" Background="{DynamicResource Brush.SurfaceAlt}" Height="38">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Path Grid.Column="0" Data="{StaticResource Icon.Search}" Fill="{DynamicResource Brush.TextSecondary}" Width="16" Height="16" Margin="12,0,8,0" Stretch="Uniform" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="SearchBox" Grid.Column="1" BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center" FontSize="13" Foreground="{DynamicResource Brush.TextPrimary}" TextChanged="SearchBox_TextChanged"/>
+                                    <TextBlock Grid.Column="1" Text="Поиск статей..." Foreground="{DynamicResource Brush.TextMuted}" FontSize="13" VerticalAlignment="Center" Margin="0,0,12,0" IsHitTestVisible="False">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </Border>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <TextBlock Text="Сортировка:" FontSize="11"
+                                           Foreground="{DynamicResource Brush.TextSecondary}"
+                                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <ComboBox x:Name="SortCombo" Width="170" Height="28" FontSize="12"
+                                          SelectionChanged="SortCombo_SelectionChanged">
+                                    <ComboBoxItem Content="По дате обновления" IsSelected="True"/>
+                                    <ComboBoxItem Content="Популярные (просмотры)"/>
+                                    <ComboBoxItem Content="Полезные"/>
+                                </ComboBox>
+                            </StackPanel>
+                        </StackPanel>
                     </Border>
 
                     <ListBox x:Name="ArticlesList" Grid.Row="1" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="ArticlesList_SelectionChanged">
@@ -207,9 +221,18 @@
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <TextBlock Grid.Row="0" Text="{Binding Title}" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource Brush.TextPrimary}" TextWrapping="Wrap" MaxHeight="40" TextTrimming="CharacterEllipsis"/>
                                     <TextBlock Grid.Row="1" Text="{Binding Content}" FontSize="12" Foreground="{DynamicResource Brush.TextSecondary}" Margin="0,6,0,0" MaxHeight="34" TextTrimming="CharacterEllipsis" TextWrapping="Wrap"/>
+                                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,6,0,0">
+                                        <TextBlock Text="👁" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding ViewCount}" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" Margin="3,0,10,0"/>
+                                        <TextBlock Text="👍" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding HelpfulCount}" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" Margin="3,0,10,0"/>
+                                        <TextBlock Text="👎" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding NotHelpfulCount}" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                    </StackPanel>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>

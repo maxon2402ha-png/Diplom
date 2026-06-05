@@ -101,16 +101,23 @@ namespace КР_Ханников.Windows
             var newTitle = TitleTextBox.Text?.Trim() ?? string.Empty;
             var newDescription = DescriptionTextBox.Text?.Trim() ?? string.Empty;
 
+            TitleError.Visibility = Visibility.Collapsed;
+            DescriptionError.Visibility = Visibility.Collapsed;
+
+            bool invalid = false;
             if (string.IsNullOrWhiteSpace(newTitle))
             {
-                MessageBox.Show("Тема не может быть пустой.");
-                return;
+                TitleError.Text = "Тема не может быть пустой";
+                TitleError.Visibility = Visibility.Visible;
+                invalid = true;
             }
             if (string.IsNullOrWhiteSpace(newDescription))
             {
-                MessageBox.Show("Описание не может быть пустым.");
-                return;
+                DescriptionError.Text = "Описание не может быть пустым";
+                DescriptionError.Visibility = Visibility.Visible;
+                invalid = true;
             }
+            if (invalid) return;
 
                         string history = "";
 

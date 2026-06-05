@@ -1,0 +1,115 @@
+<Window x:Class="КР_Ханников.Windows.FeedbackRatingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Оценка решения"
+        Height="380" Width="480"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None" AllowsTransparency="True"
+        Background="Transparent" ResizeMode="NoResize"
+        FontFamily="Segoe UI">
+
+    <Border Background="{DynamicResource Brush.Surface}" CornerRadius="12"
+            BorderThickness="1" BorderBrush="{DynamicResource Brush.Border}">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" BlurRadius="30" ShadowDepth="0" Opacity="0.2"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Padding="24,16" BorderThickness="0,0,0,1"
+                    BorderBrush="{DynamicResource Brush.Border}"
+                    MouseLeftButtonDown="TitleBar_MouseDown">
+                <TextBlock Text="Оцените решение" FontSize="16" FontWeight="SemiBold"
+                           Foreground="{DynamicResource Brush.TextPrimary}"/>
+            </Border>
+
+            <StackPanel Grid.Row="1" Margin="32,24">
+                <TextBlock Text="Насколько вы довольны решением проблемы?"
+                           FontSize="14" Foreground="{DynamicResource Brush.TextSecondary}"
+                           TextWrapping="Wrap" Margin="0,0,0,20"/>
+
+                <!-- Звёзды -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,24">
+                    <Button x:Name="Star1" Content="★" FontSize="36" Background="Transparent" BorderThickness="0"
+                            Foreground="{DynamicResource Brush.Border}" Cursor="Hand"
+                            Click="Star_Click" Tag="1" Width="52" Height="52"/>
+                    <Button x:Name="Star2" Content="★" FontSize="36" Background="Transparent" BorderThickness="0"
+                            Foreground="{DynamicResource Brush.Border}" Cursor="Hand"
+                            Click="Star_Click" Tag="2" Width="52" Height="52"/>
+                    <Button x:Name="Star3" Content="★" FontSize="36" Background="Transparent" BorderThickness="0"
+                            Foreground="{DynamicResource Brush.Border}" Cursor="Hand"
+                            Click="Star_Click" Tag="3" Width="52" Height="52"/>
+                    <Button x:Name="Star4" Content="★" FontSize="36" Background="Transparent" BorderThickness="0"
+                            Foreground="{DynamicResource Brush.Border}" Cursor="Hand"
+                            Click="Star_Click" Tag="4" Width="52" Height="52"/>
+                    <Button x:Name="Star5" Content="★" FontSize="36" Background="Transparent" BorderThickness="0"
+                            Foreground="{DynamicResource Brush.Border}" Cursor="Hand"
+                            Click="Star_Click" Tag="5" Width="52" Height="52"/>
+                </StackPanel>
+
+                <TextBlock Text="Комментарий (необязательно)"
+                           FontSize="13" FontWeight="SemiBold"
+                           Foreground="{DynamicResource Brush.TextPrimary}" Margin="0,0,0,6"/>
+                <TextBox x:Name="CommentBox" Height="80" Padding="12,8"
+                         BorderThickness="1" BorderBrush="{DynamicResource Brush.Border}"
+                         Background="{DynamicResource Brush.Surface}"
+                         Foreground="{DynamicResource Brush.TextPrimary}"
+                         FontSize="13" TextWrapping="Wrap" AcceptsReturn="True">
+                    <TextBox.Resources>
+                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="7"/></Style>
+                    </TextBox.Resources>
+                </TextBox>
+            </StackPanel>
+
+            <Border Grid.Row="2" Padding="24,14" BorderThickness="0,1,0,0"
+                    BorderBrush="{DynamicResource Brush.Border}">
+                <Grid>
+                    <Button Content="Пропустить" HorizontalAlignment="Left"
+                            Height="38" Width="110"
+                            Background="{DynamicResource Brush.SurfaceAlt}"
+                            Foreground="{DynamicResource Brush.TextSecondary}"
+                            BorderThickness="1" BorderBrush="{DynamicResource Brush.Border}"
+                            Cursor="Hand" Click="Skip_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button x:Name="SubmitBtn" Content="Отправить оценку" HorizontalAlignment="Right"
+                            Height="38" Width="160"
+                            Background="{DynamicResource Brush.Primary}"
+                            Foreground="{DynamicResource Brush.TextOnPrimary}"
+                            BorderThickness="0"
+                            FontWeight="SemiBold" Cursor="Hand" Click="Submit_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="7">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource Brush.PrimaryDark}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter Property="Background" Value="{DynamicResource Brush.Border}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

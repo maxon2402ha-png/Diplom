@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using КР_Ханников.Core;
 using КР_Ханников.Data;
+using System.Collections.Generic;
 
 namespace КР_Ханников.Services
 {
@@ -38,13 +39,13 @@ namespace КР_Ханников.Services
                         _mlContext = new MLContext(seed: 0);
         }
 
-                                public void TrainModels(AppDbContext dbContext)
+        public void TrainModels(AppDbContext dbContext)
         {
             var tickets = dbContext.Tickets.AsNoTracking().ToList();
 
-                        if (tickets.Count < 3) return;
+            if (tickets.Count < 3) return;
 
-                        var trainingData = tickets.Select(t => new TicketInput
+            var allData = tickets.Select(t => new TicketInput
             {
                 Title = t.Title,
                 Description = t.Description ?? "",
@@ -52,27 +53,60 @@ namespace КР_Ханников.Services
                 Priority = t.Priority.ToString()
             }).ToList();
 
-            var dataView = _mlContext.Data.LoadFromEnumerable(trainingData);
+            var dataView = _mlContext.Data.LoadFromEnumerable(allData);
 
-                                                            var categoryPipeline = _mlContext.Transforms.Text.FeaturizeText("TitleFeaturized", nameof(TicketInput.Title))
+            // --- Category model ---
+            var catPipeline = _mlContext.Transforms.Text.FeaturizeText("TitleFeaturized", nameof(TicketInput.Title))
                 .Append(_mlContext.Transforms.Text.FeaturizeText("DescFeaturized", nameof(TicketInput.Description)))
                 .Append(_mlContext.Transforms.Concatenate("Features", "TitleFeaturized", "DescFeaturized"))
                 .Append(_mlContext.Transforms.Conversion.MapValueToKey("Label", nameof(TicketInput.Category)))
                 .Append(_mlContext.MulticlassClassification.Trainers.SdcaMaximumEntropy("Label", "Features"))
                 .Append(_mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel"));
 
-            var categoryModel = categoryPipeline.Fit(dataView);
-            _mlContext.Model.Save(categoryModel, dataView.Schema, _categoryModelPath);
+            var catModel = catPipeline.Fit(dataView);
+            _mlContext.Model.Save(catModel, dataView.Schema, _categoryModelPath);
 
-                        var priorityPipeline = _mlContext.Transforms.Text.FeaturizeText("TitleFeaturized", nameof(TicketInput.Title))
+            // --- Priority model ---
+            var prioPipeline = _mlContext.Transforms.Text.FeaturizeText("TitleFeaturized", nameof(TicketInput.Title))
                 .Append(_mlContext.Transforms.Text.FeaturizeText("DescFeaturized", nameof(TicketInput.Description)))
                 .Append(_mlContext.Transforms.Concatenate("Features", "TitleFeaturized", "DescFeaturized"))
                 .Append(_mlContext.Transforms.Conversion.MapValueToKey("Label", nameof(TicketInput.Priority)))
                 .Append(_mlContext.MulticlassClassification.Trainers.SdcaMaximumEntropy("Label", "Features"))
                 .Append(_mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel"));
 
-            var priorityModel = priorityPipeline.Fit(dataView);
-            _mlContext.Model.Save(priorityModel, dataView.Schema, _priorityModelPath);
+            var prioModel = prioPipeline.Fit(dataView);
+            _mlContext.Model.Save(prioModel, dataView.Schema, _priorityModelPath);
+
+            // --- Evaluate and save metrics ---
+            try
+            {
+                SaveMetrics(dbContext, "Category", catPipeline, dataView, allData.Count);
+                SaveMetrics(dbContext, "Priority", prioPipeline, dataView, allData.Count);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ML Metrics] {ex.Message}");
+            }
+        }
+
+        private void SaveMetrics(AppDbContext db, string modelType,
+            IEstimator<ITransformer> pipeline, IDataView dataView, int sampleCount)
+        {
+            var split = _mlContext.Data.TrainTestSplit(dataView, testFraction: 0.2);
+            var model = pipeline.Fit(split.TrainSet);
+            var predictions = model.Transform(split.TestSet);
+            var metrics = _mlContext.MulticlassClassification.Evaluate(predictions);
+
+            db.MlModelMetrics.Add(new MlModelMetrics
+            {
+                ModelType = modelType,
+                TrainedAt = DateTime.UtcNow,
+                MicroAccuracy = metrics.MicroAccuracy,
+                MacroAccuracy = metrics.MacroAccuracy,
+                LogLoss = metrics.LogLoss,
+                SampleCount = sampleCount
+            });
+            db.SaveChanges();
         }
 
                                 public (TicketCategory Category, TicketPriority Priority) Predict(string title, string description)

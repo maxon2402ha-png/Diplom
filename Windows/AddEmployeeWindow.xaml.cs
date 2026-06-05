@@ -36,25 +36,45 @@ namespace КР_Ханников.Windows
             var password = PasswordBox.Password;
                         var role = (RoleBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? Constants.UserRoles.Support;
 
-            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-            {
-                MessageBox.Show("Пожалуйста, заполните все обязательные поля (Имя, Логин, Пароль).", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+            NameError.Visibility = Visibility.Collapsed;
+            UsernameError.Visibility = Visibility.Collapsed;
+            PasswordError.Visibility = Visibility.Collapsed;
 
-            if (password.Length < 6)
+            bool invalid = false;
+            if (string.IsNullOrWhiteSpace(name))
             {
-                MessageBox.Show("В целях безопасности пароль должен содержать не менее 6 символов.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                NameError.Text = "Укажите ФИО сотрудника";
+                NameError.Visibility = Visibility.Visible;
+                invalid = true;
             }
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                UsernameError.Text = "Укажите логин";
+                UsernameError.Visibility = Visibility.Visible;
+                invalid = true;
+            }
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                PasswordError.Text = "Укажите пароль";
+                PasswordError.Visibility = Visibility.Visible;
+                invalid = true;
+            }
+            else if (password.Length < 6)
+            {
+                PasswordError.Text = "Минимум 6 символов";
+                PasswordError.Visibility = Visibility.Visible;
+                invalid = true;
+            }
+            if (invalid) return;
 
             try
             {
                 using var db = App.CreateDbContext();
 
-                                if (await db.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower()))
+                if (await db.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower()))
                 {
-                    MessageBox.Show("Пользователь с таким логином уже существует в системе! Пожалуйста, придумайте другой логин.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    UsernameError.Text = "Логин уже занят";
+                    UsernameError.Visibility = Visibility.Visible;
                     UsernameBox.Focus();
                     return;
                 }

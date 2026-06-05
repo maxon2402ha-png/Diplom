@@ -23,7 +23,7 @@
 
         <Style x:Key="BtnPrimary" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Brush.Primary}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextOnPrimary}"/>
             <Setter Property="Padding" Value="16,8"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -168,10 +168,10 @@
                     </StackPanel>
                 </StackPanel>
 
-                <Border x:Name="TimerBorder" Grid.Column="2" Background="#F3F4F6" CornerRadius="8" Padding="12,8" VerticalAlignment="Center" Margin="16,0">
+                <Border x:Name="TimerBorder" Grid.Column="2" Background="{DynamicResource Brush.SurfaceAlt}" CornerRadius="8" Padding="12,8" VerticalAlignment="Center" Margin="16,0">
                     <StackPanel Orientation="Horizontal">
                         <Path Data="{StaticResource Icon.Clock}" Fill="{Binding Foreground, ElementName=TimerText}" Width="16" Height="16" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="TimerText" Text="00:00:00" FontSize="16" FontWeight="Bold" Foreground="#374151" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TimerText" Text="00:00:00" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Brush.TextPrimary}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Border>
             </Grid>
@@ -197,18 +197,136 @@
                         <TextBlock Text="Описание" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource Brush.TextSecondary}" Margin="0,0,0,8"/>
                         <TextBlock x:Name="DescriptionText" TextWrapping="Wrap" FontSize="14" Foreground="{DynamicResource Brush.TextPrimary}"/>
 
-                        <Border x:Name="AttachmentPanel" Background="{DynamicResource Brush.SurfaceAlt}" CornerRadius="6" Padding="12" Margin="0,16,0,0" Visibility="Collapsed">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource Icon.Attachment}" Fill="{DynamicResource Brush.TextSecondary}" Width="16" Margin="0,0,10,0"/>
-                                <TextBlock x:Name="FileNameText" Text="file.txt" VerticalAlignment="Center" FontWeight="Medium" Foreground="{DynamicResource Brush.TextPrimary}"/>
-                                <Button Content="Скачать" Style="{StaticResource CompactButton}" Margin="12,0,0,0" Click="OpenAttachment_Click"/>
-                            </StackPanel>
-                        </Border>
+                        <!-- Вложения -->
+                        <StackPanel x:Name="AttachmentsSection" Margin="0,16,0,0">
+                            <Grid Margin="0,0,0,6">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource Icon.Attachment}" Fill="{DynamicResource Brush.TextSecondary}"
+                                          Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Вложения" FontSize="12" FontWeight="Bold"
+                                               Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <Button x:Name="AddAttachmentBtn" Content="+ Прикрепить"
+                                        HorizontalAlignment="Right"
+                                        Style="{StaticResource CompactButton}"
+                                        Click="AddAttachment_Click"/>
+                            </Grid>
+
+                            <TextBlock x:Name="NoAttachmentsText" Text="Нет вложений"
+                                       FontSize="12" Foreground="{DynamicResource Brush.TextMuted}"
+                                       Margin="0,4,0,0" Visibility="Collapsed"/>
+
+                            <ItemsControl x:Name="AttachmentsList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
+                                                CornerRadius="6" Padding="10,8" Margin="0,0,0,4"
+                                                Background="{DynamicResource Brush.SurfaceAlt}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Превью / иконка -->
+                                                <Border Grid.Column="0" Width="40" Height="40" CornerRadius="4"
+                                                        Margin="0,0,10,0" ClipToBounds="True"
+                                                        Background="{DynamicResource Brush.Border}">
+                                                    <Grid>
+                                                        <!-- Изображение (если IsImage) -->
+                                                        <Image Source="{Binding ImageSource}"
+                                                               Stretch="UniformToFill">
+                                                            <Image.Style>
+                                                                <Style TargetType="Image">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsImage}" Value="True">
+                                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Image.Style>
+                                                        </Image>
+                                                        <!-- Иконка для не-изображений -->
+                                                        <TextBlock Text="{Binding Icon}" FontSize="20"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsImage}" Value="True">
+                                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Grid>
+                                                </Border>
+
+                                                <!-- Имя и размер -->
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding FileName}" FontSize="13" FontWeight="Medium"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               Foreground="{DynamicResource Brush.TextPrimary}"/>
+                                                    <TextBlock Text="{Binding SizeLabel}" FontSize="11"
+                                                               Foreground="{DynamicResource Brush.TextMuted}" Margin="0,2,0,0"/>
+                                                </StackPanel>
+
+                                                <!-- Кнопки действий -->
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Button Content="Открыть" Style="{StaticResource CompactButton}"
+                                                            Margin="0,0,6,0"
+                                                            Tag="{Binding}" Click="OpenAttachmentItem_Click"/>
+                                                    <Button Content="Удалить" Style="{StaticResource CompactButton}"
+                                                            Tag="{Binding}" Click="DeleteAttachment_Click"
+                                                            Visibility="{Binding CanDelete, Converter={StaticResource BoolToVis}}"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
 
                         <Border x:Name="SolutionPanel" Background="#ECFDF5" BorderBrush="#10B981" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,16,0,0" Visibility="Collapsed">
                             <StackPanel>
                                 <TextBlock Text="РЕШЕНИЕ" Foreground="#059669" FontWeight="Bold" FontSize="11" Margin="0,0,0,4"/>
                                 <TextBlock x:Name="SolutionText" Text="..." TextWrapping="Wrap" Foreground="#064E3B"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Рекомендованные статьи (только для клиента, без решения) -->
+                        <Border x:Name="RecommendationsPanel" Background="#EFF6FF" BorderBrush="#93C5FD" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,16,0,0" Visibility="Collapsed">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="💡" FontSize="14" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Возможно, поможет" FontSize="12" FontWeight="Bold" Foreground="#1E40AF" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock x:Name="RecommendationsLoadingText" Text="Подбираем статьи..." FontSize="12" Foreground="#3B82F6" Margin="0,0,0,4" Visibility="Collapsed"/>
+                                <ItemsControl x:Name="RecommendationsList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="White" CornerRadius="4" Padding="10,8" Margin="0,2"
+                                                    BorderBrush="#DBEAFE" BorderThickness="1" Cursor="Hand"
+                                                    Tag="{Binding Article}" MouseLeftButtonUp="RecommendedArticle_Click">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding Article.Title}"
+                                                               FontSize="13" FontWeight="Medium" Foreground="#1E40AF"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <Border Grid.Column="1" Background="#DBEAFE" CornerRadius="3" Padding="6,2" Margin="8,0,0,0">
+                                                        <TextBlock Text="{Binding ScorePercent}" FontSize="11" Foreground="#1E40AF" FontWeight="SemiBold"/>
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -410,6 +528,47 @@
                     </Button>
 
                     <Button x:Name="RateButton" Content="⭐ Оценить работу" Style="{StaticResource BtnSecondary}" Visibility="Collapsed" Click="Rate_Click" HorizontalAlignment="Stretch" Margin="0,0,0,8"/>
+
+                    <!-- Панель подтверждения решения (для клиента, статус Resolved) -->
+                    <Border x:Name="ClientConfirmPanel" Visibility="Collapsed"
+                            Background="#F0FDF4" CornerRadius="8"
+                            BorderThickness="1" BorderBrush="#86EFAC"
+                            Padding="14,12" Margin="0,0,0,8">
+                        <StackPanel>
+                            <TextBlock Text="✅ Проблема решена?" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="#166534" Margin="0,0,0,8"/>
+                            <TextBlock Text="Оператор отметил тикет как решённый. Подтвердите или отклоните решение."
+                                       FontSize="12" Foreground="#15803D" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                            <Button Content="✓ Подтвердить решение"
+                                    Style="{StaticResource SuccessButton}"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="0,0,0,6"
+                                    Click="ConfirmResolution_Click"/>
+                            <Button Content="✗ Проблема не решена"
+                                    Background="#EF4444"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    Padding="12,8"
+                                    FontWeight="SemiBold"
+                                    FontSize="13"
+                                    Cursor="Hand"
+                                    HorizontalAlignment="Stretch"
+                                    Click="RejectResolution_Click">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#DC2626"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </StackPanel>
+                    </Border>
 
                     <Button Content="Закрыть окно" Click="CloseWindow_Click" Style="{StaticResource BtnSecondary}" Margin="0,16,0,0" HorizontalAlignment="Stretch"/>
                 </StackPanel>

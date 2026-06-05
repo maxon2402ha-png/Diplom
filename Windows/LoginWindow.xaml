@@ -17,7 +17,7 @@
     <Window.Resources>
         <Style x:Key="PrimaryButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Brush.Primary}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextOnPrimary}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Height" Value="44"/>
@@ -219,34 +219,35 @@
                                Margin="0,0,0,48"/>
 
                     <TextBlock Text="Логин" Style="{StaticResource FieldLabel}"/>
-                    <TextBox x:Name="UsernameBox" 
-                             Height="48" 
-                             Padding="16,0" 
+                    <TextBox x:Name="UsernameBox"
+                             Height="48"
+                             Padding="16,0"
                              VerticalContentAlignment="Center"
                              BorderThickness="1"
                              BorderBrush="{DynamicResource Brush.Border}"
                              Background="{DynamicResource Brush.Surface}"
                              Foreground="{DynamicResource Brush.TextPrimary}"
                              FontSize="15"
-                             Margin="0,0,0,24">
+                             Margin="0,0,0,4">
                         <TextBox.Resources>
                             <Style TargetType="Border">
                                 <Setter Property="CornerRadius" Value="8"/>
                             </Style>
                         </TextBox.Resources>
                     </TextBox>
+                    <TextBlock x:Name="UsernameError" Style="{DynamicResource FieldError}" Margin="0,0,0,20"/>
 
                     <TextBlock Text="Пароль" Style="{StaticResource FieldLabel}"/>
-                    <PasswordBox x:Name="PasswordBox" 
-                                 Height="48" 
-                                 Padding="16,0" 
+                    <PasswordBox x:Name="PasswordBox"
+                                 Height="48"
+                                 Padding="16,0"
                                  VerticalContentAlignment="Center"
                                  BorderThickness="1"
                                  BorderBrush="{DynamicResource Brush.Border}"
                                  Background="{DynamicResource Brush.Surface}"
                                  Foreground="{DynamicResource Brush.TextPrimary}"
                                  FontSize="15"
-                                 Margin="0,0,0,24"
+                                 Margin="0,0,0,4"
                                  KeyDown="PasswordBox_KeyDown">
                         <PasswordBox.Resources>
                             <Style TargetType="Border">
@@ -254,13 +255,21 @@
                             </Style>
                         </PasswordBox.Resources>
                     </PasswordBox>
+                    <TextBlock x:Name="PasswordError" Style="{DynamicResource FieldError}" Margin="0,0,0,20"/>
 
-                    <CheckBox x:Name="RememberMeCheck" 
-                              Content="Запомнить меня" 
-                              Margin="0,0,0,32"
-                              Foreground="{DynamicResource Brush.TextSecondary}"
-                              FontSize="14"
-                              Cursor="Hand"/>
+                    <Grid Margin="0,0,0,28">
+                        <CheckBox x:Name="RememberMeCheck"
+                                  Content="Запомнить меня"
+                                  Foreground="{DynamicResource Brush.TextSecondary}"
+                                  FontSize="14" Cursor="Hand"
+                                  VerticalAlignment="Center"/>
+                        <Button Content="Забыли пароль?"
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Background="Transparent" BorderThickness="0"
+                                Foreground="{DynamicResource Brush.Primary}"
+                                FontSize="13" Cursor="Hand"
+                                Click="ForgotPassword_Click"/>
+                    </Grid>
 
                     <Button x:Name="LoginButton"
                             Content="Войти" 

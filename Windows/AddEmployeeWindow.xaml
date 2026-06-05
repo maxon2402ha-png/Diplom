@@ -14,7 +14,7 @@
     <Window.Resources>
         <Style x:Key="BtnPrimary" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Brush.Primary}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextOnPrimary}"/>
             <Setter Property="Padding" Value="24,10"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="14"/>
@@ -146,8 +146,9 @@
                                    Foreground="{DynamicResource Brush.TextPrimary}" 
                                    FontWeight="SemiBold" 
                                    Margin="0,0,0,8"/>
-                        <TextBox x:Name="NameBox" 
+                        <TextBox x:Name="NameBox"
                                  ToolTip="Введите полное имя сотрудника"/>
+                        <TextBlock x:Name="NameError" Style="{DynamicResource FieldError}"/>
                     </StackPanel>
 
                     <StackPanel Margin="0,0,0,16">
@@ -158,6 +159,7 @@
                         <TextBox x:Name="UsernameBox"
                                  TextChanged="UsernameBox_TextChanged"
                                  ToolTip="Уникальное имя пользователя для входа"/>
+                        <TextBlock x:Name="UsernameError" Style="{DynamicResource FieldError}"/>
                     </StackPanel>
 
                     <Grid Margin="0,0,0,16">
@@ -177,6 +179,7 @@
                                          VerticalContentAlignment="Center"
                                          Padding="10,0"
                                          ToolTip="Начальный пароль"/>
+                            <TextBlock x:Name="PasswordError" Style="{DynamicResource FieldError}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Column="2">

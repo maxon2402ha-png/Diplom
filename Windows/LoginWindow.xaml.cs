@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Versioning;
@@ -24,7 +24,6 @@ namespace КР_Ханников.Windows
             InitializeComponent();
             _context = App.CreateDbContext();
             _authService = new AuthService(_context);
-
             LoadSavedCredentials();
         }
 
@@ -33,7 +32,6 @@ namespace КР_Ханников.Windows
             InitializeComponent();
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
-
             LoadSavedCredentials();
         }
 
@@ -41,7 +39,7 @@ namespace КР_Ханников.Windows
         {
             try
             {
-                                if (Properties.Settings.Default.IsRemembered)
+                if (Properties.Settings.Default.IsRemembered)
                 {
                     UsernameBox.Text = Properties.Settings.Default.Username;
                     RememberMeCheck.IsChecked = true;
@@ -52,9 +50,7 @@ namespace КР_Ханников.Windows
                     Loaded += (s, e) => UsernameBox.Focus();
                 }
             }
-            catch
-            {
-                            }
+            catch { }
         }
 
         private void SaveCredentials(string username)
@@ -73,7 +69,7 @@ namespace КР_Ханников.Windows
                 }
                 Properties.Settings.Default.Save();
             }
-            catch { /* Игнорируем ошибки сохранения настроек */ }
+            catch { }
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -105,61 +101,112 @@ namespace КР_Ханников.Windows
 
         private void Login_Click(object sender, RoutedEventArgs e)
         {
+            HideError();
+            UsernameError.Visibility = Visibility.Collapsed;
+            PasswordError.Visibility = Visibility.Collapsed;
+
+            var username = UsernameBox.Text;
+            var password = PasswordBox.Password;
+
+            bool hasError = false;
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                UsernameError.Text = "Введите логин";
+                UsernameError.Visibility = Visibility.Visible;
+                hasError = true;
+            }
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                PasswordError.Text = "Введите пароль";
+                PasswordError.Visibility = Visibility.Visible;
+                hasError = true;
+            }
+            if (hasError) return;
+
+            LoginButton.IsEnabled = false;
+            LoginButton.Content = "Вход...";
+
             try
             {
-                HideError();
-                var username = UsernameBox.Text;
-                var password = PasswordBox.Password;
+                var result = _authService.Login(username, password);
 
-                if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+                switch (result.Status)
                 {
-                    ShowError("Пожалуйста, заполните все поля");
+                    case LoginStatus.Success:
+                        HandleSuccessfulLogin(username, result.User!);
+                        break;
+
+                    case LoginStatus.Locked:
+                        var remaining = result.LockoutRemaining!.Value;
+                        var timeStr = remaining.TotalMinutes >= 1
+                            ? $"{(int)remaining.TotalMinutes} мин. {remaining.Seconds} сек."
+                            : $"{remaining.Seconds} сек.";
+                        ShowError($"Аккаунт временно заблокирован.\nПовторите через {timeStr}.");
+                        PasswordBox.Clear();
+                        break;
+
+                    case LoginStatus.EmailNotVerified:
+                        ShowError("Ваш Email не подтверждён. Завершите регистрацию.");
+                        break;
+
+                    case LoginStatus.InvalidCredentials:
+                        if (result.AttemptsLeft.HasValue)
+                            ShowError($"Неверный логин или пароль. Осталось попыток: {result.AttemptsLeft}");
+                        else
+                            ShowError("Неверный логин или пароль");
+                        PasswordBox.Clear();
+                        PasswordBox.Focus();
+                        break;
+
+                    case LoginStatus.Error:
+                        ShowError($"Ошибка: {result.ErrorMessage}");
+                        break;
+                }
+            }
+            finally
+            {
+                LoginButton.IsEnabled = true;
+                LoginButton.Content = "Войти";
+            }
+        }
+
+        private void HandleSuccessfulLogin(string username, User user)
+        {
+            SaveCredentials(username);
+            ApplyUserTheme(user.Id);
+
+            if (user.MustChangePassword)
+            {
+                var changeWnd = new ForceChangePasswordWindow(_authService, user.Id)
+                {
+                    Owner = this
+                };
+                if (changeWnd.ShowDialog() != true)
+                {
+                    ShowError("Вход невозможен без смены пароля");
+                    _authService.Logout();
                     return;
                 }
-
-                if (_authService.Login(username, password))
-                {
-                    SaveCredentials(username);
-                    if (_authService.CurrentUser != null) ApplyUserTheme(_authService.CurrentUser.Id);
-
-                    var mainWindow = new MainWindow(_context, _authService);
-                    mainWindow.Show();
-                    this.Close();
-                }
-                else
-                {
-                    ShowError("Неверный логин или пароль");
-                    PasswordBox.Clear();
-                    PasswordBox.Focus();
-                }
             }
-            catch (Exception ex)
-            {
-                ShowError($"Ошибка: {ex.Message}");
-            }
+
+            var mainWindow = new MainWindow(_context, _authService);
+            mainWindow.Show();
+            this.Close();
         }
 
         private void ShowError(string message)
         {
-            try
-            {
-                string path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "Текст_Ошибки.txt");
-                System.IO.File.WriteAllText(path, message);
-
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = path,
-                    UseShellExecute = true
-                });
-            }
-            catch { }
-
-            MessageBox.Show("Я открыл Блокнот с текстом ошибки.\nПожалуйста, скопируйте текст оттуда и отправьте сюда!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            if (FindName("ErrorText") is System.Windows.Controls.TextBlock tb)
+                tb.Text = message;
+            if (FindName("ErrorContainer") is FrameworkElement container)
+                container.Visibility = Visibility.Visible;
         }
 
         private void HideError()
         {
-                    }
+            if (FindName("ErrorContainer") is FrameworkElement container)
+                container.Visibility = Visibility.Collapsed;
+        }
 
         private void ApplyUserTheme(int userId)
         {
@@ -173,6 +220,19 @@ namespace КР_Ханников.Windows
             catch { }
         }
 
+        private void ForgotPassword_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var wnd = new ForgotPasswordWindow(_context) { Owner = this };
+                wnd.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                ShowError($"Ошибка: {ex.Message}");
+            }
+        }
+
         private void Register_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -184,12 +244,12 @@ namespace КР_Ханников.Windows
 
                 if (regWindow.ShowDialog() == true)
                 {
-                    MessageBox.Show("Регистрация успешна! Войдите в систему.", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                    ShowError("Регистрация успешна! Проверьте почту и войдите в систему.");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка открытия регистрации: {ex.Message}");
+                ShowError($"Ошибка открытия регистрации: {ex.Message}");
             }
         }
 

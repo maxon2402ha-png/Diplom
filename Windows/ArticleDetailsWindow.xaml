@@ -102,14 +102,62 @@
             </Border>
         </Grid>
 
-        <Border Grid.Row="2" Background="{DynamicResource Brush.Surface}" Padding="20" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,1,0,0">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Закрыть" 
-                        Style="{StaticResource BtnOutline}" 
+        <Border Grid.Row="2" Background="{DynamicResource Brush.Surface}" Padding="20,14" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,1,0,0">
+            <Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Статья полезна?" FontSize="13"
+                               Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center"
+                               Margin="0,0,12,0"/>
+                    <Button x:Name="HelpfulBtn" Content="👍 Да" Width="80" Height="36"
+                            Background="#D1FAE5" Foreground="#065F46" BorderThickness="1"
+                            BorderBrush="#6EE7B7" Cursor="Hand" Click="Helpful_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="6">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#A7F3D0"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button x:Name="NotHelpfulBtn" Content="👎 Нет" Width="90" Height="36"
+                            Background="#FEE2E2" Foreground="#991B1B" BorderThickness="1"
+                            BorderBrush="#FCA5A5" Cursor="Hand" Margin="8,0,0,0"
+                            Click="NotHelpful_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="6">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#FECACA"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <TextBlock x:Name="RatingResultText" FontSize="12"
+                               Foreground="{DynamicResource Brush.TextMuted}"
+                               VerticalAlignment="Center" Margin="12,0,0,0"/>
+                </StackPanel>
+                <Button Content="Закрыть"
+                        Style="{StaticResource BtnOutline}"
                         Click="Close_Click"
                         Width="120"
+                        HorizontalAlignment="Right"
                         IsCancel="True"/>
-            </StackPanel>
+            </Grid>
         </Border>
 
     </Grid>

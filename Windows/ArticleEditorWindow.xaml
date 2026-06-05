@@ -37,6 +37,7 @@
                     <StackPanel Grid.Row="0" Margin="0,0,0,15">
                         <TextBlock Text="Заголовок" FontWeight="SemiBold" Foreground="#7F8C8D" Margin="0,0,0,5"/>
                         <TextBox x:Name="TitleBox" Height="35" Padding="5" FontSize="14" VerticalContentAlignment="Center"/>
+                        <TextBlock x:Name="TitleError" Style="{DynamicResource FieldError}"/>
                     </StackPanel>
 
                     <StackPanel Grid.Row="1">
@@ -51,6 +52,7 @@
                                  BorderThickness="1"
                                  VerticalContentAlignment="Top"
                                  Height="350"/>
+                        <TextBlock x:Name="ContentError" Style="{DynamicResource FieldError}"/>
                     </StackPanel>
                 </Grid>
             </Border>

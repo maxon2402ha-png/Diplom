@@ -42,11 +42,23 @@ namespace КР_Ханников.Windows
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(TitleBox.Text) || string.IsNullOrWhiteSpace(ContentBox.Text))
+            TitleError.Visibility = Visibility.Collapsed;
+            ContentError.Visibility = Visibility.Collapsed;
+
+            bool invalid = false;
+            if (string.IsNullOrWhiteSpace(TitleBox.Text))
             {
-                MessageBox.Show("Заполните заголовок и содержание.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                TitleError.Text = "Укажите заголовок";
+                TitleError.Visibility = Visibility.Visible;
+                invalid = true;
             }
+            if (string.IsNullOrWhiteSpace(ContentBox.Text))
+            {
+                ContentError.Text = "Заполните содержание";
+                ContentError.Visibility = Visibility.Visible;
+                invalid = true;
+            }
+            if (invalid) return;
 
             ArticleTitle = TitleBox.Text.Trim();
             ArticleContent = ContentBox.Text.Trim();

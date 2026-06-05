@@ -1,25 +1,27 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <Color x:Key="Color.Primary">#2563EB</Color>
-    <Color x:Key="Color.PrimaryDark">#1E40AF</Color>
-    <Color x:Key="Color.PrimaryLight">#DBEAFE</Color>
-    <Color x:Key="Color.Background">#F3F4F6</Color>
+    <Color x:Key="Color.Primary">#18181B</Color>
+    <Color x:Key="Color.PrimaryDark">#000000</Color>
+    <Color x:Key="Color.PrimaryLight">#E4E4E7</Color>
+    <Color x:Key="Color.Background">#F6F6F7</Color>
     <Color x:Key="Color.Surface">#FFFFFF</Color>
-    <Color x:Key="Color.SurfaceAlt">#F9FAFB</Color>
-    <Color x:Key="Color.Border">#E5E7EB</Color>
-    <Color x:Key="Color.Divider">#E5E7EB</Color>
-    <Color x:Key="Color.TextPrimary">#111827</Color>
-    <Color x:Key="Color.TextSecondary">#6B7280</Color>
-    <Color x:Key="Color.TextMuted">#9CA3AF</Color>
+    <Color x:Key="Color.SurfaceAlt">#F4F4F5</Color>
+    <Color x:Key="Color.Border">#E7E7EA</Color>
+    <Color x:Key="Color.Divider">#E7E7EA</Color>
+    <Color x:Key="Color.BorderStrong">#D4D4D8</Color>
+    <Color x:Key="Color.TextPrimary">#18181B</Color>
+    <Color x:Key="Color.TextSecondary">#52525B</Color>
+    <Color x:Key="Color.TextMuted">#A1A1AA</Color>
     <Color x:Key="Color.TextOnPrimary">#FFFFFF</Color>
-    <Color x:Key="Color.Shadow">#000000</Color>
-    <Color x:Key="Color.Accent">#2563EB</Color>
+    <Color x:Key="Color.Shadow">#18181B</Color>
+    <Color x:Key="Color.Accent">#18181B</Color>
 
-    <Color x:Key="Color.Danger">#EF4444</Color>
+    <Color x:Key="Color.Danger">#DC2626</Color>
     <Color x:Key="Color.Success">#10B981</Color>
-    <Color x:Key="Color.Warning">#F59E0B</Color>
-    <Color x:Key="Color.Status.Open">#2563EB</Color>
+    <Color x:Key="Color.Warning">#EA580C</Color>
+
+    <Color x:Key="Color.Status.Open">#3B82F6</Color>
     <Color x:Key="Color.Status.InProgress">#F59E0B</Color>
     <Color x:Key="Color.Status.Closed">#10B981</Color>
     <Color x:Key="Color.Status.Overdue">#DC2626</Color>
@@ -33,8 +35,9 @@
     <SolidColorBrush x:Key="Brush.SurfaceAlt" Color="{StaticResource Color.SurfaceAlt}" />
 
     <SolidColorBrush x:Key="Brush.Border" Color="{StaticResource Color.Border}" />
+    <SolidColorBrush x:Key="Brush.BorderStrong" Color="{StaticResource Color.BorderStrong}" />
     <SolidColorBrush x:Key="Brush.Divider" Color="{StaticResource Color.Divider}" />
-    <SolidColorBrush x:Key="Brush.Shadow" Color="{StaticResource Color.Shadow}" Opacity="0.1"/>
+    <SolidColorBrush x:Key="Brush.Shadow" Color="{StaticResource Color.Shadow}" Opacity="0.08"/>
 
     <SolidColorBrush x:Key="Brush.TextPrimary" Color="{StaticResource Color.TextPrimary}" />
     <SolidColorBrush x:Key="Brush.TextSecondary" Color="{StaticResource Color.TextSecondary}" />
@@ -45,13 +48,14 @@
     <SolidColorBrush x:Key="Brush.Accent" Color="{StaticResource Color.Accent}" />
 
     <SolidColorBrush x:Key="Brush.Danger" Color="{StaticResource Color.Danger}" />
+    <SolidColorBrush x:Key="Brush.Error" Color="{StaticResource Color.Danger}" />
     <SolidColorBrush x:Key="Brush.Success" Color="{StaticResource Color.Success}" />
     <SolidColorBrush x:Key="Brush.Warning" Color="{StaticResource Color.Warning}" />
 
-    <SolidColorBrush x:Key="Brush.SuccessLight" Color="#D1FAE5" />
-    <SolidColorBrush x:Key="Brush.SuccessSoft" Color="#ECFDF5" />
-    <SolidColorBrush x:Key="Brush.InfoLight" Color="#DBEAFE" />
-    <SolidColorBrush x:Key="Brush.AccentLight" Color="#DBEAFE" />
+    <SolidColorBrush x:Key="Brush.SuccessLight" Color="#E7F8F1" />
+    <SolidColorBrush x:Key="Brush.SuccessSoft" Color="#F0FBF6" />
+    <SolidColorBrush x:Key="Brush.InfoLight" Color="#ECECEF" />
+    <SolidColorBrush x:Key="Brush.AccentLight" Color="#E4E4E7" />
 
     <SolidColorBrush x:Key="Brush.Status.Open" Color="{StaticResource Color.Status.Open}" />
     <SolidColorBrush x:Key="Brush.Status.InProgress" Color="{StaticResource Color.Status.InProgress}" />
@@ -59,13 +63,13 @@
     <SolidColorBrush x:Key="Brush.Status.Overdue" Color="{StaticResource Color.Status.Overdue}" />
 
     <LinearGradientBrush x:Key="Brush.HeaderGradient" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#2563EB" Offset="0.0" />
-        <GradientStop Color="#1E40AF" Offset="1.0" />
+        <GradientStop Color="#27272A" Offset="0.0" />
+        <GradientStop Color="#18181B" Offset="1.0" />
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="Brush.AccentGradient" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#2563EB" Offset="0.0" />
-        <GradientStop Color="#3B82F6" Offset="1.0" />
+        <GradientStop Color="#27272A" Offset="0.0" />
+        <GradientStop Color="#3F3F46" Offset="1.0" />
     </LinearGradientBrush>
 
 </ResourceDictionary>

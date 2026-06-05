@@ -70,10 +70,16 @@ namespace КР_Ханников.Core
         [NotMapped]
         public User? User { get; set; }
 
+        public bool IsOverdue { get; set; } = false;
+
+        public bool NotifiedAboutDeadline { get; set; } = false;
+
+        public DateTime? ClientConfirmationDeadline { get; set; }
+
+        public ICollection<TicketAttachment> Attachments { get; set; } = new List<TicketAttachment>();
+
         [NotMapped]
-        public bool IsOverdue =>
-            DueAt.HasValue &&
-            DueAt.Value < DateTime.UtcNow &&
-            Status != Constants.TicketStatus.Closed;
+        public bool IsCurrentlyOverdue =>
+            DueAt.HasValue && DueAt.Value < DateTime.UtcNow && Status != Constants.TicketStatus.Closed;
     }
 }

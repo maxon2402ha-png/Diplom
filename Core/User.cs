@@ -33,11 +33,16 @@ namespace КР_Ханников.Core
         
                                 public bool IsEmailVerified { get; set; } = false;
 
-                                [MaxLength(10)]
+        [MaxLength(10)]
         public string? VerificationCode { get; set; }
 
-        
-                [NotMapped]
+        public int FailedLoginAttempts { get; set; } = 0;
+
+        public DateTime? LockedUntil { get; set; }
+
+        public bool MustChangePassword { get; set; } = false;
+
+        [NotMapped]
         public Employee? Employee { get; set; }
 
         [NotMapped]

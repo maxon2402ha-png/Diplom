@@ -137,24 +137,46 @@ namespace КР_Ханников.Windows
             }
         }
 
+        private void ClearFieldErrors()
+        {
+            if (FullNameError != null) FullNameError.Visibility = Visibility.Collapsed;
+            if (UsernameError != null) UsernameError.Visibility = Visibility.Collapsed;
+            if (PasswordError != null) PasswordError.Visibility = Visibility.Collapsed;
+            if (ConfirmPasswordError != null) ConfirmPasswordError.Visibility = Visibility.Collapsed;
+        }
+
+        private static void SetFieldError(System.Windows.Controls.TextBlock? label, string? message)
+        {
+            if (label == null) return;
+            if (string.IsNullOrEmpty(message))
+            {
+                label.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                label.Text = message;
+                label.Visibility = Visibility.Visible;
+            }
+        }
+
         private bool ValidateForm()
         {
             HideError();
+            ClearFieldErrors();
+
+            bool ok = true;
 
             if (FullNameBox != null)
             {
                 if (string.IsNullOrWhiteSpace(FullNameBox.Text))
                 {
-                    ShowError("Введите ваше имя");
-                    FullNameBox.Focus();
-                    return false;
+                    SetFieldError(FullNameError, "Введите ваше имя");
+                    ok = false;
                 }
-
-                if (FullNameBox.Text.Length < 2)
+                else if (FullNameBox.Text.Length < 2)
                 {
-                    ShowError("Имя должно содержать минимум 2 символа");
-                    FullNameBox.Focus();
-                    return false;
+                    SetFieldError(FullNameError, "Минимум 2 символа");
+                    ok = false;
                 }
             }
 
@@ -162,23 +184,18 @@ namespace КР_Ханников.Windows
             {
                 if (string.IsNullOrWhiteSpace(UsernameBox.Text))
                 {
-                    ShowError("Введите логин");
-                    UsernameBox.Focus();
-                    return false;
+                    SetFieldError(UsernameError, "Введите логин");
+                    ok = false;
                 }
-
-                if (UsernameBox.Text.Length < 3)
+                else if (UsernameBox.Text.Length < 3)
                 {
-                    ShowError("Логин должен содержать минимум 3 символа");
-                    UsernameBox.Focus();
-                    return false;
+                    SetFieldError(UsernameError, "Минимум 3 символа");
+                    ok = false;
                 }
-
-                if (!Regex.IsMatch(UsernameBox.Text, @"^[a-zA-Z0-9_\.]+$"))
+                else if (!Regex.IsMatch(UsernameBox.Text, @"^[a-zA-Z0-9_\.]+$"))
                 {
-                    ShowError("Логин может содержать только латинские буквы, цифры, точку и подчёркивание");
-                    UsernameBox.Focus();
-                    return false;
+                    SetFieldError(UsernameError, "Только латиница, цифры, «.» и «_»");
+                    ok = false;
                 }
             }
 
@@ -186,30 +203,24 @@ namespace КР_Ханников.Windows
             {
                 if (string.IsNullOrEmpty(PasswordBox.Password))
                 {
-                    ShowError("Введите пароль");
-                    PasswordBox.Focus();
-                    return false;
+                    SetFieldError(PasswordError, "Введите пароль");
+                    ok = false;
                 }
-
-                if (PasswordBox.Password.Length < 6)
+                else if (PasswordBox.Password.Length < 6)
                 {
-                    ShowError("Пароль должен содержать минимум 6 символов");
-                    PasswordBox.Focus();
-                    return false;
+                    SetFieldError(PasswordError, "Минимум 6 символов");
+                    ok = false;
                 }
             }
 
-            if (PasswordBox != null && ConfirmPasswordBox != null)
+            if (PasswordBox != null && ConfirmPasswordBox != null
+                && PasswordBox.Password != ConfirmPasswordBox.Password)
             {
-                if (PasswordBox.Password != ConfirmPasswordBox.Password)
-                {
-                    ShowError("Пароли не совпадают");
-                    ConfirmPasswordBox.Focus();
-                    return false;
-                }
+                SetFieldError(ConfirmPasswordError, "Пароли не совпадают");
+                ok = false;
             }
 
-            return true;
+            return ok;
         }
 
         private void Register_Click(object sender, RoutedEventArgs e)
@@ -230,7 +241,8 @@ namespace КР_Ханников.Windows
 
                 if (_context.Users.Any(u => u.Username.ToLower() == normalizedUsername))
                 {
-                    ShowError("Пользователь с таким логином уже существует");
+                    SetFieldError(UsernameError, "Логин уже занят");
+                    UsernameBox?.Focus();
                     UsernameBox?.Focus();
                     return;
                 }

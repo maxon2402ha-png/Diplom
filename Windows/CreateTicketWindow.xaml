@@ -18,7 +18,7 @@
 
         <Style x:Key="PrimaryButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Brush.Primary}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextOnPrimary}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Height" Value="42"/>
@@ -137,6 +137,7 @@
                                     <TextBlock Text=" *" Foreground="{DynamicResource Brush.Danger}" FontWeight="Bold"/>
                                 </StackPanel>
                                 <TextBox x:Name="TitleTextBox" Height="42" Padding="12,0" VerticalContentAlignment="Center" MaxLength="200" FontSize="14"/>
+                                <TextBlock x:Name="TitleError" Style="{DynamicResource FieldError}"/>
                                 <TextBlock Text="Кратко опишите суть проблемы" Style="{StaticResource FieldHint}"/>
                             </StackPanel>
 
@@ -146,6 +147,7 @@
                                     <TextBlock Text=" *" Foreground="{DynamicResource Brush.Danger}" FontWeight="Bold"/>
                                 </StackPanel>
                                 <TextBox x:Name="DescriptionTextBox" Height="Auto" MinHeight="120" MaxHeight="200" Padding="12" AcceptsReturn="True" TextWrapping="Wrap" FontSize="14" VerticalContentAlignment="Top"/>
+                                <TextBlock x:Name="DescriptionError" Style="{DynamicResource FieldError}"/>
                                 <TextBlock Text="Подробно опишите проблему, шаги воспроизведения и ожидаемый результат" Style="{StaticResource FieldHint}" TextWrapping="Wrap"/>
                             </StackPanel>
 
@@ -164,21 +166,64 @@
                             </StackPanel>
 
                             <StackPanel>
-                                <TextBlock Text="Прикрепить файл" Style="{StaticResource FieldLabel}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="12"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="Вложения" Style="{StaticResource FieldLabel}" Margin="0"/>
+                                    <Button Content="+ Прикрепить файл" Style="{StaticResource SecondaryButton}"
+                                            Height="28" Padding="12,0" FontSize="12" Margin="12,0,0,0"
+                                            Click="AttachFile_Click"/>
+                                </StackPanel>
 
-                                    <Border Grid.Column="0" Background="{DynamicResource Brush.SurfaceAlt}" BorderThickness="1" BorderBrush="{DynamicResource Brush.Border}" CornerRadius="6" Padding="12,0" Height="42">
-                                        <TextBlock x:Name="FileNameTextBlock" Text="Файл не выбран" VerticalAlignment="Center" Foreground="{DynamicResource Brush.TextMuted}" TextTrimming="CharacterEllipsis"/>
-                                    </Border>
+                                <Border x:Name="DropZone" MinHeight="64" BorderThickness="2"
+                                        BorderBrush="{DynamicResource Brush.Border}"
+                                        Background="{DynamicResource Brush.SurfaceAlt}"
+                                        CornerRadius="8" Cursor="Hand"
+                                        AllowDrop="True"
+                                        Drop="DropZone_Drop"
+                                        DragOver="DropZone_DragOver"
+                                        DragLeave="DropZone_DragLeave"
+                                        MouseLeftButtonDown="DropZone_Click">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,12">
+                                        <TextBlock Text="📂 Перетащите файлы сюда" HorizontalAlignment="Center"
+                                                   FontSize="13" Foreground="{DynamicResource Brush.TextSecondary}"/>
+                                        <TextBlock Text="или нажмите для выбора" HorizontalAlignment="Center"
+                                                   FontSize="12" Foreground="{DynamicResource Brush.TextMuted}" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
 
-                                    <Button Grid.Column="2" Content="Обзор..." Style="{StaticResource SecondaryButton}" Click="AttachFile_Click" Padding="16,0" Height="42"/>
-                                </Grid>
-                                <TextBlock Text="Поддерживаются: PDF, PNG, JPG, DOC, DOCX, TXT (до 10 МБ)" Style="{StaticResource FieldHint}"/>
+                                <ItemsControl x:Name="SelectedFilesList" Margin="0,8,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource Brush.Surface}"
+                                                    BorderBrush="{DynamicResource Brush.Border}"
+                                                    BorderThickness="1" CornerRadius="6"
+                                                    Padding="10,6" Margin="0,0,0,4">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding FileName}"
+                                                               VerticalAlignment="Center" FontSize="13"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               Foreground="{DynamicResource Brush.TextPrimary}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding SizeLabel}"
+                                                               VerticalAlignment="Center" FontSize="11"
+                                                               Foreground="{DynamicResource Brush.TextMuted}"
+                                                               Margin="8,0"/>
+                                                    <Button Grid.Column="2" Content="✕" Width="24" Height="24"
+                                                            FontSize="11" Background="Transparent" BorderThickness="0"
+                                                            Foreground="{DynamicResource Brush.TextMuted}"
+                                                            Cursor="Hand" Tag="{Binding}"
+                                                            Click="RemovePendingFile_Click"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <TextBlock Text="≤ 25 МБ | PNG, JPG, JPEG, PDF, LOG, TXT, DOCX, XLSX, ZIP"
+                                           Style="{StaticResource FieldHint}"/>
                             </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
@@ -207,12 +252,7 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Background="#F9F5FF" BorderBrush="#E9D5FF" BorderThickness="1" CornerRadius="6" Padding="12">
-                            <StackPanel>
-                                <TextBlock Text="✨ Сила ИИ" Foreground="#6B21A8" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
-                                <TextBlock Text="Вам больше не нужно выбирать категорию! Нейросеть сама прочитает текст и назначит тикет нужному инженеру." Foreground="{DynamicResource Brush.TextSecondary}" FontSize="12" TextWrapping="Wrap" LineHeight="18"/>
-                            </StackPanel>
-                        </Border>
+                    
                     </StackPanel>
                 </Border>
             </Grid>

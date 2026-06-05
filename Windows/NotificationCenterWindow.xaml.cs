@@ -29,9 +29,10 @@ namespace КР_Ханников.Windows
         {
             try
             {
-                using var db = new AppDbContext();
+                using var db = App.CreateDbContext();
 
                 _allNotifications = db.Notifications
+                    .AsNoTracking()
                     .Where(n => n.UserId == _currentUserId)
                     .OrderByDescending(n => n.CreatedAt)
                     .ToList();
@@ -155,7 +156,7 @@ namespace КР_Ханников.Windows
 
             try
             {
-                using var db = new AppDbContext();
+                using var db = App.CreateDbContext();
 
                 var unreadNotifications = db.Notifications
                     .Where(n => n.UserId == _currentUserId && !n.IsRead)
@@ -195,7 +196,7 @@ namespace КР_Ханников.Windows
             {
                 if (!notification.IsRead)
                 {
-                    using var db = new AppDbContext();
+                    using var db = App.CreateDbContext();
                     var dbNotification = db.Notifications.Find(notification.Id);
                     if (dbNotification != null)
                     {

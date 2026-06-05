@@ -293,7 +293,7 @@ namespace КР_Ханников.Windows
                         .Where(t => t.Status != Constants.TicketStatus.Closed)
                         .ToListAsync();
 
-                                        _allActiveTickets = [.. openTickets.Union(_periodTickets.Where(t => t.Status == Constants.TicketStatus.Closed))];
+                    _allActiveTickets = [.. openTickets.Union(_periodTickets.Where(t => t.Status == Constants.TicketStatus.Closed))];
                 }
 
                 UpdateDashboard();
@@ -318,35 +318,30 @@ namespace КР_Ханников.Windows
 
                 using var db = App.CreateDbContext();
                 var kpiService = new KpiService(db);
+                var workloadService = new WorkloadService(db);
 
-                var supportEmployees = await db.Employees
-                    .Include(e => e.User)
-                    .Where(e => e.User != null && e.User.Role == Constants.UserRoles.Support)
-                    .AsNoTracking()
-                    .ToListAsync();
+                var employeeKpis = await kpiService.GetEmployeeKpisAsync(fromDate, toDate);
+                var workloads = await workloadService.GetWorkloadAsync();
+
+                var workloadByEmployee = workloads.ToDictionary(w => w.EmployeeId);
 
                 var matrixData = new List<EmployeePerformanceVm>();
 
-                foreach (var emp in supportEmployees)
+                foreach (var kpi in employeeKpis)
                 {
-                    int workload = await kpiService.CalculateEmployeeWorkloadAsync(emp.Id);
-                    double sla = await kpiService.CalculateSlaComplianceAsync(emp.Id, fromDate, toDate);
-                    double art = await kpiService.CalculateArtAsync(emp.Id, fromDate, toDate);
-
-                    var activeEmpTickets = await db.Tickets
-                        .CountAsync(t => t.AssigneeEmployeeId == emp.Id && t.Status != Constants.TicketStatus.Closed && t.Status != Constants.TicketStatus.Resolved);
+                    workloadByEmployee.TryGetValue(kpi.EmployeeId, out var wl);
 
                     matrixData.Add(new EmployeePerformanceVm
                     {
-                        Name = emp.Name,
-                        ActiveTickets = activeEmpTickets,
-                        WorkloadPoints = workload,
-                        SlaPercentage = sla,
-                        ArtHours = art
+                        Name = kpi.Name,
+                        ActiveTickets = wl?.ActiveTickets ?? 0,
+                        WorkloadPoints = wl?.WeightedLoad ?? 0,
+                        SlaPercentage = kpi.SlaCompliancePercent,
+                        ArtHours = kpi.AvgResolutionHours
                     });
                 }
 
-                                PerformanceMatrixGrid.ItemsSource = matrixData.OrderByDescending(m => m.WorkloadPoints).ToList();
+                PerformanceMatrixGrid.ItemsSource = matrixData.OrderByDescending(m => m.WorkloadPoints).ToList();
             }
             catch (Exception ex)
             {
@@ -374,7 +369,8 @@ namespace КР_Ханников.Windows
 
                 BuildCharts(_periodTickets, categoryChartSet, priorityChartSet, assigneeChartSet);
 
-                                DashboardTicketsGrid.ItemsSource = _periodTickets.OrderByDescending(t => t.CreatedAt).ToList();
+                // Оставляем ToList(), так как ItemsSource имеет тип IEnumerable
+                DashboardTicketsGrid.ItemsSource = _periodTickets.OrderByDescending(t => t.CreatedAt).ToList();
             }
             catch (Exception ex)
             {
@@ -411,7 +407,7 @@ namespace КР_Ханников.Windows
                     t.Assignee.User != null &&
                     t.Assignee.User.Username == assignee);
 
-                        return [.. query];
+            return [.. query];
         }
 
         private void CalculateKpi(List<Ticket> tickets)
@@ -432,7 +428,7 @@ namespace КР_Ханников.Windows
             double percent = total == 0 ? 0 : (double)closed / total * 100.0;
             KpiResolvedPercentText = $"{percent:0.#}%";
 
-                        List<double> resolvedTimes = [.. tickets
+            List<double> resolvedTimes = [.. tickets
                 .Where(t => t.Status == Constants.TicketStatus.Closed && t.ClosedAt.HasValue)
                 .Select(t => (t.ClosedAt!.Value - t.CreatedAt).TotalHours)];
 
