@@ -159,6 +159,7 @@ namespace КР_Ханников.Data
                 entity.Property(k => k.ViewCount).HasDefaultValue(0);
                 entity.Property(k => k.HelpfulCount).HasDefaultValue(0);
                 entity.Property(k => k.NotHelpfulCount).HasDefaultValue(0);
+                entity.Property(k => k.IsPublished).HasDefaultValue(true);
             });
 
             modelBuilder.Entity<MlModelMetrics>(entity =>

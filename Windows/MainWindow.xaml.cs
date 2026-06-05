@@ -20,7 +20,7 @@ using КР_Ханников.Core;
 using КР_Ханников.Data;
 using КР_Ханников.Helpers;
 using КР_Ханников.Services;
-using AppConstants = КР_Ханников.Core.Constants;
+using Constants = КР_Ханников.Core.Constants;
 
 namespace КР_Ханников.Windows
 {
@@ -69,14 +69,13 @@ namespace КР_Ханников.Windows
 
             OpenKnowledgeBaseCommand = new RelayCommand(() =>
             {
-                var role = _authService.CurrentUser?.Role;
-                if (role == AppConstants.UserRoles.Admin || role == AppConstants.UserRoles.Support)
-                    OpenKnowledgeBase_Click(this, new RoutedEventArgs());
+                // База знаний доступна всем ролям (клиент видит только опубликованное).
+                OpenKnowledgeBase_Click(this, new RoutedEventArgs());
             });
 
             RefreshCommand = new RelayCommand(() =>
             {
-                bool isClient = CurrentUser?.Role == AppConstants.UserRoles.Client;
+                bool isClient = CurrentUser?.Role == Constants.UserRoles.Client;
                 _ = LoadTicketsAsync(isClient);
             });
 
@@ -107,7 +106,7 @@ namespace КР_Ханников.Windows
             ConfigureAccess();
             ApplySavedTheme();
 
-            bool isClient = CurrentUser?.Role == AppConstants.UserRoles.Client;
+            bool isClient = CurrentUser?.Role == Constants.UserRoles.Client;
             if (isClient) UpdateSidebar(MyTicketsButton); else UpdateSidebar(AllTicketsButton);
 
             LoadSavedSearches();
@@ -158,7 +157,7 @@ namespace КР_Ханников.Windows
         {
             _notificationTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMinutes(AppConstants.UI.NotificationCheckIntervalMinutes)
+                Interval = TimeSpan.FromMinutes(Constants.UI.NotificationCheckIntervalMinutes)
             };
             _notificationTimer.Tick += async (s, e) =>
             {
@@ -208,7 +207,16 @@ namespace КР_Ханников.Windows
 
         // --- Обработчики меню (навигация) ---
         private void OpenDashboard_Click(object sender, RoutedEventArgs e)
-            => SwitchPage(OpenDashboardButton, new DashboardControl(_authService));
+        {
+            var role = _authService.CurrentUser?.Role;
+            // Admin — общий дашборд по системе; Support — личный KPI-дашборд оператора.
+            if (Constants.UserRoles.IsAdmin(role))
+                SwitchPage(OpenDashboardButton, new DashboardControl(_authService));
+            else if (Constants.UserRoles.IsSupport(role))
+                SwitchPage(OpenDashboardButton, new AgentDashboardControl(_authService));
+            else
+                MessageBox.Show("Доступ запрещен.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
 
         // Раздел аналитики KPI и нагрузки. Это UserControl, поэтому
         // встраивается в главное окно через SwitchPage, как и Дашборд.
@@ -223,7 +231,7 @@ namespace КР_Ханников.Windows
 
         private void OpenEmployees_Click(object sender, RoutedEventArgs e)
         {
-            if (_authService.CurrentUser?.Role == AppConstants.UserRoles.Admin)
+            if (_authService.CurrentUser?.Role == Constants.UserRoles.Admin)
                 SwitchPage(EmployeesButton, new ManageEmployeesControl(_authService));
             else
                 MessageBox.Show("Доступ запрещен.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -231,7 +239,7 @@ namespace КР_Ханников.Windows
 
         private void OpenAudit_Click(object sender, RoutedEventArgs e)
         {
-            if (_authService.CurrentUser?.Role == AppConstants.UserRoles.Admin)
+            if (_authService.CurrentUser?.Role == Constants.UserRoles.Admin)
                 SwitchPage(AuditButton, new AuditLogControl(_context, _authService));
             else
                 MessageBox.Show("Доступ запрещен.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -239,7 +247,7 @@ namespace КР_Ханников.Windows
 
         private void OpenReports_Click(object sender, RoutedEventArgs e)
         {
-            if (_authService.CurrentUser?.Role == AppConstants.UserRoles.Admin)
+            if (_authService.CurrentUser?.Role == Constants.UserRoles.Admin)
                 SwitchPage(ReportsButton, new ReportsControl());
             else
                 MessageBox.Show("Доступ запрещен.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -247,7 +255,7 @@ namespace КР_Ханников.Windows
 
         private void OpenMlMetrics_Click(object sender, RoutedEventArgs e)
         {
-            if (_authService.CurrentUser?.Role == AppConstants.UserRoles.Admin)
+            if (_authService.CurrentUser?.Role == Constants.UserRoles.Admin)
                 SwitchPage(MlMetricsButton, new MlMetricsControl());
             else
                 MessageBox.Show("Доступ запрещен.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -255,7 +263,7 @@ namespace КР_Ханников.Windows
 
         private void OpenBackup_Click(object sender, RoutedEventArgs e)
         {
-            if (_authService.CurrentUser?.Role == AppConstants.UserRoles.Admin)
+            if (_authService.CurrentUser?.Role == Constants.UserRoles.Admin)
                 SwitchPage(BackupButton, new BackupManagerControl());
             else
                 MessageBox.Show("Доступ запрещен.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -263,7 +271,7 @@ namespace КР_Ханников.Windows
 
         public async void OpenTickets_Click(object sender, RoutedEventArgs e)
         {
-            bool isClient = CurrentUser?.Role == AppConstants.UserRoles.Client;
+            bool isClient = CurrentUser?.Role == Constants.UserRoles.Client;
             var btn = isClient ? MyTicketsButton : AllTicketsButton;
             UpdateSidebar(btn);
 
@@ -345,13 +353,13 @@ namespace КР_Ханников.Windows
                     .AsQueryable();
 
                 // Фильтрация по правам доступа
-                if (currentUser.Role == AppConstants.UserRoles.Client)
+                if (currentUser.Role == Constants.UserRoles.Client)
                 {
                     var client = await _context.Clients.FirstOrDefaultAsync(c => c.UserId == currentUser.Id);
                     if (client != null) query = query.Where(t => t.ClientId == client.Id);
                     else query = query.Where(t => false); // Нет клиента - нет тикетов
                 }
-                else if (currentUser.Role == AppConstants.UserRoles.Support && filterByCurrentUser)
+                else if (currentUser.Role == Constants.UserRoles.Support && filterByCurrentUser)
                 {
                     var empId = await GetCurrentEmployeeIdOrNullAsync();
                     query = query.Where(t => t.AssigneeEmployeeId == empId);
@@ -373,7 +381,7 @@ namespace КР_Ханников.Windows
                 // Фильтры UI
                 if (StatusFilter?.SelectedItem is ComboBoxItem sel && sel.Content is string st && st != "Все статусы" && st != "Все")
                 {
-                    if (st == "In Progress") query = query.Where(t => t.Status == AppConstants.TicketStatus.InProgress);
+                    if (st == "In Progress") query = query.Where(t => t.Status == Constants.TicketStatus.InProgress);
                     else query = query.Where(t => t.Status == st);
                 }
 
@@ -532,26 +540,85 @@ namespace КР_Ханников.Windows
 
         private async void AssignTicket_Click(object sender, RoutedEventArgs e)
         {
-            if (TicketsGrid?.SelectedItem is Ticket s)
+            if (TicketsGrid?.SelectedItem is not Ticket s) return;
+
+            var role = _authService.CurrentUser?.Role;
+            if (!Constants.UserRoles.IsEmployee(role))
             {
-                var eid = await GetCurrentEmployeeIdOrNullAsync();
-                if (eid != null)
+                MessageBox.Show("Доступ запрещён.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                if (Constants.UserRoles.IsAdmin(role))
                 {
-                    await _ticketService.AssignAsync(s.Id, eid.Value);
-                    await LoadTicketsAsync();
+                    // Администратор назначает тикет любому оператору.
+                    using var pickCtx = App.CreateDbContext();
+                    var wnd = new AssignOperatorWindow(pickCtx, s) { Owner = this };
+                    if (wnd.ShowDialog() == true && wnd.SelectedEmployeeId is int empId)
+                    {
+                        await _ticketService.AssignAsync(s.Id, empId);
+                        await LoadTicketsAsync();
+                    }
                 }
+                else
+                {
+                    // Оператор берёт тикет в работу на себя (с проверкой лимита нагрузки).
+                    var eid = await GetCurrentEmployeeIdOrNullAsync();
+                    if (eid != null)
+                    {
+                        await _ticketService.AssignAsync(s.Id, eid.Value);
+                        await LoadTicketsAsync();
+                    }
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Бизнес-ограничение (например, превышен лимит нагрузки оператора).
+                MessageBox.Show(ex.Message, "Назначение невозможно", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка назначения: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private async void DeleteTicket_Click(object sender, RoutedEventArgs e)
         {
-            if (TicketsGrid?.SelectedItem is Ticket s)
+            if (TicketsGrid?.SelectedItem is not Ticket s) return;
+
+            // Удаление тикета — только администратор (двойная проверка).
+            if (!Constants.UserRoles.IsAdmin(_authService.CurrentUser?.Role))
             {
-                if (MessageBox.Show("Удалить?", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                MessageBox.Show("Доступ запрещён.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (MessageBox.Show($"Удалить тикет #{s.Id}?", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
+            try
+            {
+                await _ticketService.DeleteAsync(s.Id);
+
+                using (var db = App.CreateDbContext())
                 {
-                    await _ticketService.DeleteAsync(s.Id);
-                    await LoadTicketsAsync();
+                    db.AuditLogs.Add(new AuditLog
+                    {
+                        Username = _authService.CurrentUser?.Username ?? "Система",
+                        Action = "Удаление тикета",
+                        Details = $"Удалён тикет #{s.Id}: {s.Title}",
+                        Timestamp = DateTime.UtcNow
+                    });
+                    await db.SaveChangesAsync();
                 }
+
+                await LoadTicketsAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка удаления: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -775,18 +842,16 @@ namespace КР_Ханников.Windows
         private void ConfigureAccess()
         {
             var role = _authService.CurrentUser?.Role;
-            bool isAdmin = role == AppConstants.UserRoles.Admin;
-            bool isClient = role == AppConstants.UserRoles.Client;
+            bool isAdmin = Constants.UserRoles.IsAdmin(role);
+            bool isClient = Constants.UserRoles.IsClient(role);
 
+            // Видимость пунктов навигации задаётся через RoleToVisibilityConverter в XAML.
+            // Здесь — дополнительная защита для самых чувствительных пунктов (двойная проверка).
+            // Дашборд и База знаний полностью управляются конвертером (Client их не видит /
+            // видит соответственно), поэтому тут их трогать не нужно.
             if (EmployeesButton != null) EmployeesButton.Visibility = isAdmin ? Visibility.Visible : Visibility.Collapsed;
             if (AuditButton != null) AuditButton.Visibility = isAdmin ? Visibility.Visible : Visibility.Collapsed;
             if (CreateTicketButton != null) CreateTicketButton.Visibility = isClient ? Visibility.Visible : Visibility.Collapsed;
-
-            if (isClient)
-            {
-                if (OpenDashboardButton != null) OpenDashboardButton.Visibility = Visibility.Collapsed;
-                if (OpenKnowledgeBaseButton != null) OpenKnowledgeBaseButton.Visibility = Visibility.Collapsed;
-            }
         }
 
         private async Task<int?> GetCurrentEmployeeIdOrNullAsync()

@@ -14,6 +14,7 @@ namespace КР_Ханников.Windows
 
         public string ArticleTitle { get; private set; } = string.Empty;
         public string ArticleContent { get; private set; } = string.Empty;
+        public bool ArticlePublished { get; private set; } = true;
 
                 public ArticleEditorWindow()
         {
@@ -30,6 +31,7 @@ namespace КР_Ханников.Windows
 
             TitleBox.Text = article.Title;
             ContentBox.Text = article.Content;
+            IsPublishedCheck.IsChecked = article.IsPublished;
         }
 
                 private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -62,6 +64,7 @@ namespace КР_Ханников.Windows
 
             ArticleTitle = TitleBox.Text.Trim();
             ArticleContent = ContentBox.Text.Trim();
+            ArticlePublished = IsPublishedCheck.IsChecked == true;
 
             DialogResult = true;
             Close();

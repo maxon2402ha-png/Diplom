@@ -19,6 +19,12 @@ namespace КР_Ханников.Services
 
         public User? CurrentUser { get; private set; }
 
+        // Централизованные проверки роли текущего пользователя (вместо сравнения строк по коду).
+        public bool IsAdmin => Constants.UserRoles.IsAdmin(CurrentUser?.Role);
+        public bool IsSupport => Constants.UserRoles.IsSupport(CurrentUser?.Role);
+        public bool IsClient => Constants.UserRoles.IsClient(CurrentUser?.Role);
+        public bool IsEmployee => Constants.UserRoles.IsEmployee(CurrentUser?.Role);
+
         public LoginResult Login(string username, string password)
         {
             try

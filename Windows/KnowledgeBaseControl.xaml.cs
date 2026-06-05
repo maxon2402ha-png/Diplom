@@ -52,8 +52,13 @@ namespace КР_Ханников.Windows
             {
                                 using var db = App.CreateDbContext();
 
-                _allArticles = await db.KnowledgeBase
-                    .AsNoTracking()
+                var query = db.KnowledgeBase.AsNoTracking().AsQueryable();
+
+                // Клиент видит только опубликованные статьи; сотрудники и админ — все, включая черновики.
+                if (Constants.UserRoles.IsClient(_authService.CurrentUser?.Role))
+                    query = query.Where(a => a.IsPublished);
+
+                _allArticles = await query
                     .OrderByDescending(a => a.UpdatedAt)
                     .ToListAsync();
 
@@ -126,7 +131,9 @@ namespace КР_Ханников.Windows
             if (ArticlesList.SelectedItem is KnowledgeArticle article)
             {
                                 ReaderTitle.Text = article.Title;
-                ReaderDate.Text = $"Последнее обновление: {article.UpdatedAt:dd.MM.yyyy HH:mm}";
+                ReaderDate.Text = article.IsPublished
+                    ? $"Последнее обновление: {article.UpdatedAt:dd.MM.yyyy HH:mm}"
+                    : $"Черновик • Последнее обновление: {article.UpdatedAt:dd.MM.yyyy HH:mm}";
                 ReaderContent.Text = article.Content;
 
                                 ReaderPanel.Visibility = Visibility.Visible;
@@ -157,6 +164,7 @@ namespace КР_Ханников.Windows
                         Title = editor.ArticleTitle,
                         Content = editor.ArticleContent,
                         AuthorId = _authService.CurrentUser!.Id,
+                        IsPublished = editor.ArticlePublished,
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
                     };
@@ -190,6 +198,7 @@ namespace КР_Ханников.Windows
                     {
                         item.Title = editor.ArticleTitle;
                         item.Content = editor.ArticleContent;
+                        item.IsPublished = editor.ArticlePublished;
                         item.UpdatedAt = DateTime.UtcNow;
 
                         await db.SaveChangesAsync();

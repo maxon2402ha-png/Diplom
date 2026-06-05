@@ -261,6 +261,13 @@ namespace КР_Ханников.Windows
         {
             if (sender is not Button btn) return;
 
+            // Двойная проверка: сброс пароля доступен только администратору.
+            if (!_authService.IsAdmin)
+            {
+                MessageBox.Show("Доступ запрещён.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             int userId;
             string displayName;
             if (btn.DataContext is Employee emp)
@@ -450,6 +457,7 @@ namespace КР_Ханников.Windows
 
                         if (dbUser != null && dbUser.Role != newRole)
                         {
+                            var oldRole = dbUser.Role;
                             dbUser.Role = newRole;
 
                                                         if (newRole == "Admin" || newRole == "Support")
@@ -470,6 +478,14 @@ namespace КР_Ханников.Windows
                                     existingEmp.Role = newRole;
                                 }
                             }
+
+                            db.AuditLogs.Add(new AuditLog
+                            {
+                                Username = _authService.CurrentUser?.Username ?? "Система",
+                                Action = "Смена роли",
+                                Details = $"Пользователь {dbUser.Username} (ID: {dbUser.Id}): роль {oldRole} → {newRole}",
+                                Timestamp = DateTime.UtcNow
+                            });
 
                             await db.SaveChangesAsync();
                         }

@@ -295,7 +295,7 @@
                             </StackPanel>
                         </Button>
 
-                        <Button x:Name="ClientHistoryButton" Click="OpenClientHistory_Click" Style="{StaticResource NavButton}">
+                        <Button x:Name="ClientHistoryButton" Click="OpenClientHistory_Click" Style="{StaticResource NavButton}" Visibility="{Binding CurrentUser.Role, Converter={StaticResource RoleToVisibilityConverter}, ConverterParameter='Client'}">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource Icon.History}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" Margin="0,0,12,0"/>
                                 <TextBlock Text="История"/>
@@ -346,7 +346,7 @@
                             </StackPanel>
                         </Button>
 
-                        <Button x:Name="OpenKnowledgeBaseButton" Click="OpenKnowledgeBase_Click" Style="{StaticResource NavButton}" ToolTip="База знаний (Ctrl+K)" Visibility="{Binding CurrentUser.Role, Converter={StaticResource RoleToVisibilityConverter}, ConverterParameter='Admin,Support'}">
+                        <Button x:Name="OpenKnowledgeBaseButton" Click="OpenKnowledgeBase_Click" Style="{StaticResource NavButton}" ToolTip="База знаний (Ctrl+K)" Visibility="{Binding CurrentUser.Role, Converter={StaticResource RoleToVisibilityConverter}, ConverterParameter='Admin,Support,Client'}">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource Icon.Book}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" Margin="0,0,12,0"/>
                                 <TextBlock Text="База знаний"/>
@@ -541,7 +541,7 @@
                             <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Button x:Name="AssignTicketButton" Click="AssignTicket_Click" Content="Назначить" Style="{StaticResource SecondaryButton}" Visibility="{Binding CurrentUser.Role, Converter={StaticResource RoleToVisibilityConverter}, ConverterParameter='Admin,Support'}"/>
                                 <Button x:Name="EditTicketButton" Click="EditTicket_Click" Content="Редактировать" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Visibility="{Binding CurrentUser.Role, Converter={StaticResource RoleToVisibilityConverter}, ConverterParameter='Admin,Support'}"/>
-                                <Button x:Name="DeleteTicketButton" Click="DeleteTicket_Click" Content="Удалить" Style="{StaticResource DangerButton}" Margin="8,0,0,0" Visibility="{Binding CurrentUser.Role, Converter={StaticResource RoleToVisibilityConverter}, ConverterParameter='Admin,Support'}"/>
+                                <Button x:Name="DeleteTicketButton" Click="DeleteTicket_Click" Content="Удалить" Style="{StaticResource DangerButton}" Margin="8,0,0,0" Visibility="{Binding CurrentUser.Role, Converter={StaticResource RoleToVisibilityConverter}, ConverterParameter='Admin'}"/>
                             </StackPanel>
 
                             <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center">

@@ -128,6 +128,24 @@ namespace КР_Ханников.Windows
                     return;
                 }
 
+                // Защита владения: клиент может открывать только свои обращения.
+                if (_authService.CurrentUser is { } cu && Constants.UserRoles.IsClient(cu.Role))
+                {
+                    var ownClientId = await _context.Clients
+                        .AsNoTracking()
+                        .Where(c => c.UserId == cu.Id)
+                        .Select(c => (int?)c.Id)
+                        .FirstOrDefaultAsync();
+
+                    if (ownClientId == null || t.ClientId != ownClientId.Value)
+                    {
+                        MessageBox.Show("Доступ запрещён: вы можете просматривать только свои обращения.",
+                            "Доступ запрещён", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        Close();
+                        return;
+                    }
+                }
+
                 _ticket = t;
 
                                 TicketIdHeader.Text = $"#{_ticket.Id}";
@@ -509,14 +527,19 @@ namespace КР_Ханников.Windows
 
         private async void CloseTicket_Click(object sender, RoutedEventArgs e)
         {
-            string resolutionText = Interaction.InputBox(
-                "Введите описание решения для клиента:",
-                "Решение заявки",
-                "Вопрос решён штатным образом.");
+            var resolveWnd = new ResolveTicketWindow("Вопрос решён штатным образом.") { Owner = this };
+            if (resolveWnd.ShowDialog() != true)
+                return;
 
+            string resolutionText = resolveWnd.ResolutionText;
             if (string.IsNullOrWhiteSpace(resolutionText))
                 return;
 
+            // Необязательная привязка статьи базы знаний к решению.
+            if (resolveWnd.SelectedArticle != null)
+                resolutionText += $"\n\nСтатья базы знаний: {resolveWnd.SelectedArticle.Title} (#{resolveWnd.SelectedArticle.Id})";
+
+            CloseTicketButton.IsEnabled = false;
             try
             {
                 using var db = App.CreateDbContext();
@@ -553,6 +576,10 @@ namespace КР_Ханников.Windows
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка при закрытии: {ex.Message}");
+            }
+            finally
+            {
+                CloseTicketButton.IsEnabled = true;
             }
         }
 

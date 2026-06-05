@@ -29,8 +29,12 @@ namespace КР_Ханников.Core
             public static bool IsValid(string role)
                 => Array.Exists(All, r => r.Equals(role, StringComparison.OrdinalIgnoreCase));
 
-            public static bool IsEmployee(string role)
+            public static bool IsEmployee(string? role)
                 => role == Admin || role == Support;
+
+            public static bool IsAdmin(string? role) => role == Admin;
+            public static bool IsSupport(string? role) => role == Support;
+            public static bool IsClient(string? role) => role == Client;
         }
 
                                 public static class Database

@@ -58,6 +58,10 @@
             </Border>
 
             <Border Grid.Row="2" Padding="20" Background="#F8F9FA" CornerRadius="0,0,8,8" BorderBrush="#F0F0F0" BorderThickness="0,1,0,0">
+                <Grid>
+                    <CheckBox x:Name="IsPublishedCheck" Content="Опубликовать (видно клиентам)"
+                              IsChecked="True" VerticalAlignment="Center" HorizontalAlignment="Left"
+                              Foreground="#2C3E50" Cursor="Hand"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="Отмена" Click="Cancel_Click" Width="100" Height="35" Background="Transparent" BorderThickness="1" BorderBrush="#BDC3C7" Foreground="#7F8C8D" Margin="0,0,10,0" Cursor="Hand" IsCancel="True">
                         <Button.Template>
@@ -79,6 +83,7 @@
                         </Button.Template>
                     </Button>
                 </StackPanel>
+                </Grid>
             </Border>
         </Grid>
     </Border>

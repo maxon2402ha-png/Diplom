@@ -110,8 +110,14 @@ namespace КР_Ханников.Windows
                     {
                         var closedTickets = db.Tickets.Count(t => t.AssigneeEmployeeId == employee.Id && t.Status == Constants.TicketStatus.Closed);
 
+                        // Реальный средний рейтинг по отзывам клиентов; «—», если оценок ещё нет.
+                        var ratings = db.Feedbacks
+                            .Where(f => f.SupportId == employee.Id)
+                            .Select(f => f.Rating)
+                            .ToList();
+
                         StatLabel1.Text = "Рейтинг";
-                        StatValue1.Text = "4.9"; 
+                        StatValue1.Text = ratings.Count > 0 ? $"{ratings.Average():0.0}" : "—";
                         StatLabel2.Text = "Закрыто тикетов";
                         StatValue2.Text = closedTickets.ToString();
                     }

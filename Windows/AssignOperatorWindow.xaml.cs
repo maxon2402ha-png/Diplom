@@ -12,6 +12,10 @@ namespace КР_Ханников.Windows
         private readonly AppDbContext _context;
         private readonly Ticket _ticket;
 
+        // Выбранный оператор — назначение выполняет вызывающий код через TicketService.AssignAsync
+        // (там же проверяется лимит нагрузки и пишется история).
+        public int? SelectedEmployeeId { get; private set; }
+
         public AssignOperatorWindow(AppDbContext context, Ticket ticket)
         {
             InitializeComponent();
@@ -57,8 +61,7 @@ namespace КР_Ханников.Windows
                 return;
             }
 
-            _ticket.AssigneeEmployeeId = selected.Id;
-            if (_ticket.Status == "Open") _ticket.Status = "In Progress";
+            SelectedEmployeeId = selected.Id;
 
             DialogResult = true;
             Close();

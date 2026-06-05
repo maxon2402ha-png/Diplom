@@ -25,5 +25,9 @@ namespace КР_Ханников.Data
         public int ViewCount { get; set; } = 0;
         public int HelpfulCount { get; set; } = 0;
         public int NotHelpfulCount { get; set; } = 0;
+
+        // Опубликована ли статья. Клиенты видят только опубликованные;
+        // черновики (false) доступны только сотрудникам и администраторам.
+        public bool IsPublished { get; set; } = true;
     }
 }
