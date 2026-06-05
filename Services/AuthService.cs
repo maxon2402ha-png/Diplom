@@ -178,6 +178,8 @@ namespace КР_Ханников.Services
                     VerificationCode = code
                 };
 
+                using var tx = _context.Database.BeginTransaction();
+
                 _context.Users.Add(user);
                 _context.SaveChanges();
 
@@ -190,6 +192,8 @@ namespace КР_Ханников.Services
 
                 _context.Clients.Add(client);
                 _context.SaveChanges();
+
+                tx.Commit();
 
                 LogSecurityEvent(normalizedUsername, "RegisterClient", "Ожидает подтверждения email");
                 return user;
@@ -245,6 +249,8 @@ namespace КР_Ханников.Services
                     MustChangePassword = true
                 };
 
+                using var tx = _context.Database.BeginTransaction();
+
                 _context.Users.Add(user);
                 _context.SaveChanges();
 
@@ -258,6 +264,8 @@ namespace КР_Ханников.Services
 
                 _context.Employees.Add(employee);
                 _context.SaveChanges();
+
+                tx.Commit();
 
                 var creator = CurrentUser?.Username ?? "System";
                 LogSecurityEvent(creator, "RegisterEmployee", $"Создан сотрудник: {normalizedUsername} ({role})");

@@ -354,37 +354,6 @@
 
                 <Border Style="{StaticResource SettingsSection}">
                     <StackPanel>
-                        <TextBlock Text="📧 Каналы доставки"
-                                   FontWeight="SemiBold"
-                                   FontSize="13"
-                                   Foreground="{DynamicResource Brush.TextPrimary}"
-                                   Margin="0,0,0,14"/>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Email-уведомления"
-                                           FontWeight="Medium"
-                                           Foreground="{DynamicResource Brush.TextPrimary}"/>
-                                <TextBlock Text="Отправлять уведомления о ключевых событиях на почту"
-                                           FontSize="11"
-                                           Foreground="{DynamicResource Brush.TextMuted}"
-                                           TextWrapping="Wrap"
-                                           Margin="0,2,10,0"/>
-                            </StackPanel>
-                            <CheckBox x:Name="EmailEnabledCheckBox"
-                                      Grid.Column="1"
-                                      Style="{StaticResource ToggleSwitch}"
-                                      VerticalAlignment="Center"/>
-                        </Grid>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource SettingsSection}">
-                    <StackPanel>
                         <TextBlock Text="⚙️ Системные уведомления"
                                    FontWeight="SemiBold"
                                    FontSize="13"

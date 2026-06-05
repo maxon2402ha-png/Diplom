@@ -257,6 +257,116 @@ namespace КР_Ханников.Windows
             }
         }
 
+        private async void ResetPassword_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn) return;
+
+            int userId;
+            string displayName;
+            if (btn.DataContext is Employee emp)
+            {
+                userId = emp.UserId;
+                displayName = emp.Name;
+            }
+            else if (btn.DataContext is User user)
+            {
+                userId = user.Id;
+                displayName = user.Username;
+            }
+            else
+            {
+                return;
+            }
+
+            // Админ задаёт новый временный пароль (по умолчанию — сгенерированный надёжный).
+            var input = Microsoft.VisualBasic.Interaction.InputBox(
+                $"Введите новый временный пароль для пользователя «{displayName}».\n" +
+                "При следующем входе система потребует у пользователя сменить его.",
+                "Сброс пароля",
+                GenerateTempPassword());
+
+            // Пустая строка — пользователь нажал «Отмена».
+            if (string.IsNullOrWhiteSpace(input)) return;
+
+            var newPassword = input.Trim();
+            var (isValid, errors) = PasswordValidator.Validate(newPassword);
+            if (!isValid)
+            {
+                MessageBox.Show(
+                    "Пароль не соответствует требованиям:\n• " + string.Join("\n• ", errors),
+                    "Некорректный пароль", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Защита от двойного клика на время операции.
+            btn.IsEnabled = false;
+            try
+            {
+                using var db = App.CreateDbContext();
+                var user = await db.Users.FindAsync(userId);
+                if (user == null)
+                {
+                    MessageBox.Show("Пользователь не найден.", "Ошибка",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                user.PasswordHash = BCrypt.Net.BCrypt.EnhancedHashPassword(
+                    newPassword, Constants.Validation.BcryptWorkFactor);
+                user.MustChangePassword = true;     // принудительная смена при следующем входе
+                user.FailedLoginAttempts = 0;       // снимаем возможную блокировку
+                user.LockedUntil = null;
+
+                db.AuditLogs.Add(new AuditLog
+                {
+                    Username = _authService.CurrentUser?.Username ?? "Система",
+                    Action = "Сброс пароля",
+                    Details = $"Сброшен пароль пользователя ID: {userId} ({displayName})",
+                    Timestamp = DateTime.UtcNow
+                });
+
+                await db.SaveChangesAsync();
+
+                MessageBox.Show(
+                    $"Пароль пользователя «{displayName}» сброшен.\n\n" +
+                    $"Временный пароль: {newPassword}\n\n" +
+                    "Передайте его пользователю — при следующем входе потребуется задать новый пароль.",
+                    "Готово", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Не удалось сбросить пароль: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                btn.IsEnabled = true;
+            }
+        }
+
+        // Генерирует надёжный временный пароль (заглавная, строчная, цифра, спецсимвол, длина 10).
+        private static string GenerateTempPassword()
+        {
+            const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+            const string lower = "abcdefghijkmnpqrstuvwxyz";
+            const string digits = "23456789";
+            const string special = "!@#$%*";
+            const string all = upper + lower + digits + special;
+
+            var rnd = new Random();
+            var chars = new System.Collections.Generic.List<char>
+            {
+                upper[rnd.Next(upper.Length)],
+                lower[rnd.Next(lower.Length)],
+                digits[rnd.Next(digits.Length)],
+                special[rnd.Next(special.Length)]
+            };
+            while (chars.Count < 10)
+                chars.Add(all[rnd.Next(all.Length)]);
+
+            return new string(chars.OrderBy(_ => rnd.Next()).ToArray());
+        }
+
         private void EditUser(User user)
         {
             try

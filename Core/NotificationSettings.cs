@@ -21,6 +21,5 @@
 
         public bool ShowToast { get; set; } = true;
 
-        public bool EmailEnabled { get; set; } = false;
     }
 }

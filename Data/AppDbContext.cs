@@ -24,7 +24,6 @@ namespace КР_Ханников.Data
         public DbSet<SearchPreset> SearchPresets { get; set; }
         public DbSet<UserUiSettings> UserUiSettings { get; set; }
         public DbSet<TicketAttachment> TicketAttachments { get; set; }
-        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<MlModelMetrics> MlModelMetrics { get; set; }
 
         static AppDbContext()
@@ -234,23 +233,10 @@ namespace КР_Ханников.Data
                 entity.HasOne(a => a.UploadedByUser).WithMany().HasForeignKey(a => a.UploadedByUserId).OnDelete(DeleteBehavior.Restrict);
             });
 
-            modelBuilder.Entity<PasswordResetToken>(entity =>
-            {
-                entity.HasKey(p => p.Id);
-                entity.Property(p => p.Token).IsRequired().HasMaxLength(128);
-                entity.HasIndex(p => p.Token).IsUnique();
-                entity.HasOne(p => p.User).WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
-            });
-
             modelBuilder.Entity<Ticket>(entity =>
             {
                 entity.Property(t => t.IsOverdue).HasDefaultValue(false);
                 entity.Property(t => t.NotifiedAboutDeadline).HasDefaultValue(false);
-            });
-
-            modelBuilder.Entity<NotificationSettings>(entity =>
-            {
-                entity.Property(s => s.EmailEnabled).HasDefaultValue(false);
             });
 
             modelBuilder.Entity<UserUiSettings>(entity =>

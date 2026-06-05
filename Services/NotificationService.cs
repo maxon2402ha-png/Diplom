@@ -15,13 +15,11 @@ namespace КР_Ханников.Services
     {
         private readonly AppDbContext _context;
         private readonly AuthService _authService;
-        private readonly EmailService _emailService;
 
         public NotificationService(AppDbContext context, AuthService authService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
-            _emailService = EmailService.CreateFromConfig();
         }
 
         private void CreateNotification(
@@ -45,9 +43,7 @@ namespace КР_Ханников.Services
             _context.Notifications.Add(notification);
             _context.SaveChanges();
 
-            TrySendEmailNotification(userId, title, message, type, ticketId);
-
-                        var current = _authService.CurrentUser;
+            var current = _authService.CurrentUser;
             if (current != null && current.Id == userId)
             {
                 Application.Current.Dispatcher.Invoke(() =>
@@ -77,39 +73,6 @@ namespace КР_Ханников.Services
                     }
                 });
             }
-        }
-
-        private void TrySendEmailNotification(int userId, string title, string message, string type, int? ticketId)
-        {
-            try
-            {
-                var settings = _context.NotificationSettings.FirstOrDefault(s => s.UserId == userId);
-                if (settings == null || !settings.EmailEnabled) return;
-
-                var user = _context.Users.Find(userId);
-                if (user == null || string.IsNullOrWhiteSpace(user.Email)) return;
-
-                Task.Run(async () =>
-                {
-                    try
-                    {
-                        if (type == Constants.NotificationTypes.TicketUpdated && ticketId.HasValue)
-                            await _emailService.SendStatusChangedAsync(user.Email, user.Username, ticketId.Value, "", "");
-                        else if (type == Constants.NotificationTypes.TicketDueSoon && ticketId.HasValue)
-                        {
-                            using var db = App.CreateDbContext();
-                            var t = db.Tickets.Find(ticketId.Value);
-                            if (t?.DueAt != null)
-                                await _emailService.SendDeadlineSoonAsync(user.Email, user.Username, ticketId.Value, t.DueAt.Value);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Serilog.Log.Warning(ex, "[Email] Не удалось отправить уведомление");
-                    }
-                });
-            }
-            catch { }
         }
 
         private NotificationSettings GetSettings(int userId)
@@ -226,7 +189,7 @@ namespace КР_Ханников.Services
             }
         }
 
-                                        public void CheckWorkloadAlertsForCurrentUser()
+                                        public async Task CheckWorkloadAlertsForCurrentUserAsync()
         {
             var current = _authService.CurrentUser;
             if (current == null) return;
@@ -238,7 +201,7 @@ namespace КР_Ханников.Services
                                                                 using var db = App.CreateDbContext();
 
                                 var workloadService = new WorkloadService(db);
-                var summary = workloadService.GetSummaryAsync().GetAwaiter().GetResult();
+                var summary = await workloadService.GetSummaryAsync();
 
                 if (summary.OverloadedCount > 0)
                 {
@@ -257,7 +220,7 @@ namespace КР_Ханников.Services
                 }
 
                                 var forecastService = new ForecastService(db);
-                var risk = forecastService.AssessSlaRiskAsync(7).GetAwaiter().GetResult();
+                var risk = await forecastService.AssessSlaRiskAsync(7);
 
                 if (risk.HasEnoughData && risk.RiskLevel == SlaRiskLevel.High)
                 {

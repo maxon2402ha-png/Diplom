@@ -173,7 +173,7 @@ namespace КР_Ханников.Windows
                 }
 
                 SubmitButton.IsEnabled = false;
-                SubmitButton.Content = "Анализ ИИ и Создание...";
+                SubmitButton.Content = "Создание...";
                 Cursor = Cursors.Wait;
 
                 DateTime? due = null;
@@ -213,7 +213,7 @@ namespace КР_Ханников.Windows
                 notificationService.NotifyOperatorsAboutNewTicket(newTicket);
 
                 MessageBox.Show(
-                    $"Тикет #{newTicket.Id} успешно создан!\n\n✨ Нейросеть обработала заявку:\nКатегория: {newTicket.Category}\nПриоритет: {newTicket.Priority}",
+                    $"Тикет #{newTicket.Id} успешно создан!\n\nКатегория: {newTicket.Category}\nПриоритет: {newTicket.Priority}",
                     "Успешно создано", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 DialogResult = true;

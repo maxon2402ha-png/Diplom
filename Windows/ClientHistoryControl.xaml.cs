@@ -99,7 +99,7 @@ namespace КР_Ханников.Windows
                     .Include(t => t.Solution)
                     .Include(t => t.Client)
                     .Include(t => t.Feedback)
-                    .Include(t => t.Assignee).ThenInclude(a => a.User)
+                    .Include(t => t.Assignee).ThenInclude(a => a!.User)
                     .AsNoTracking()
                     .Where(t => t.ClientId == clientId);
 

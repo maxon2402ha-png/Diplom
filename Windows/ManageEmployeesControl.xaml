@@ -450,21 +450,33 @@
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <DataGridTemplateColumn Width="80">
+                            <DataGridTemplateColumn Width="130">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Click="DeleteEmployee_Click" 
-                                                ToolTip="Удалить сотрудника"
-                                                Style="{StaticResource DangerButton}"
-                                                Padding="8"
-                                                Width="36" Height="36"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center">
-                                            <Path Data="{StaticResource Icon.Delete}" 
-                                                  Fill="{DynamicResource Brush.Danger}" 
-                                                  Width="16" Height="16" 
-                                                  Stretch="Uniform"/>
-                                        </Button>
+                                        <StackPanel Orientation="Horizontal"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center">
+                                            <Button Click="ResetPassword_Click"
+                                                    ToolTip="Сбросить пароль"
+                                                    Content="🔑"
+                                                    FontSize="15"
+                                                    Padding="8"
+                                                    Width="36" Height="36"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Cursor="Hand"
+                                                    Margin="0,0,4,0"/>
+                                            <Button Click="DeleteEmployee_Click"
+                                                    ToolTip="Удалить сотрудника"
+                                                    Style="{StaticResource DangerButton}"
+                                                    Padding="8"
+                                                    Width="36" Height="36">
+                                                <Path Data="{StaticResource Icon.Delete}"
+                                                      Fill="{DynamicResource Brush.Danger}"
+                                                      Width="16" Height="16"
+                                                      Stretch="Uniform"/>
+                                            </Button>
+                                        </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -537,21 +549,33 @@
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <DataGridTemplateColumn Width="80">
+                            <DataGridTemplateColumn Width="130">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Click="DeleteUser_Click" 
-                                                ToolTip="Удалить пользователя"
-                                                Style="{StaticResource DangerButton}"
-                                                Padding="8"
-                                                Width="36" Height="36"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center">
-                                            <Path Data="{StaticResource Icon.Delete}" 
-                                                  Fill="{DynamicResource Brush.Danger}" 
-                                                  Width="16" Height="16" 
-                                                  Stretch="Uniform"/>
-                                        </Button>
+                                        <StackPanel Orientation="Horizontal"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center">
+                                            <Button Click="ResetPassword_Click"
+                                                    ToolTip="Сбросить пароль"
+                                                    Content="🔑"
+                                                    FontSize="15"
+                                                    Padding="8"
+                                                    Width="36" Height="36"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Cursor="Hand"
+                                                    Margin="0,0,4,0"/>
+                                            <Button Click="DeleteUser_Click"
+                                                    ToolTip="Удалить пользователя"
+                                                    Style="{StaticResource DangerButton}"
+                                                    Padding="8"
+                                                    Width="36" Height="36">
+                                                <Path Data="{StaticResource Icon.Delete}"
+                                                      Fill="{DynamicResource Brush.Danger}"
+                                                      Width="16" Height="16"
+                                                      Stretch="Uniform"/>
+                                            </Button>
+                                        </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>

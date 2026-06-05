@@ -112,7 +112,7 @@ namespace КР_Ханников.Windows
 
                 var t = await _context.Tickets
                     .Include(x => x.Client)
-                    .Include(x => x.Assignee).ThenInclude(a => a.User)
+                    .Include(x => x.Assignee).ThenInclude(a => a!.User)
                     .Include(x => x.Solution)
                     .Include(x => x.Feedback)
                     .Include(x => x.Comments).ThenInclude(c => c.Author)
@@ -356,8 +356,7 @@ namespace КР_Ханников.Windows
                 using (var db = App.CreateDbContext())
                 {
                     var svc = new ArticleRecommendationService(db);
-                    recommendations = await Task.Run(() =>
-                        svc.RecommendAsync(_ticket.Title, _ticket.Description ?? "", 5).GetAwaiter().GetResult());
+                    recommendations = await svc.RecommendAsync(_ticket.Title, _ticket.Description ?? "", 5);
                 }
 
                 RecommendationsLoadingText.Visibility = Visibility.Collapsed;

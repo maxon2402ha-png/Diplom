@@ -335,7 +335,7 @@
                         <Button x:Name="MlMetricsButton" Click="OpenMlMetrics_Click" Style="{StaticResource NavButton}" Visibility="{Binding CurrentUser.Role, Converter={StaticResource RoleToVisibilityConverter}, ConverterParameter='Admin'}">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource Icon.Dashboard}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" Margin="0,0,12,0"/>
-                                <TextBlock Text="Метрики ML"/>
+                                <TextBlock Text="Качество классификации"/>
                             </StackPanel>
                         </Button>
 

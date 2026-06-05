@@ -76,9 +76,9 @@ namespace КР_Ханников.Services
                 throw new ArgumentException("Title is required", nameof(title));
 
                         var classifier = new TicketClassifier(new RuleBasedTicketClassifier());
-            var (category, priority, isMlUsed) = classifier.Classify(title, description ?? string.Empty);
+            var (category, priority, _) = classifier.Classify(title, description ?? string.Empty);
 
-            string aiMethodName = isMlUsed ? "Нейросеть (ML.NET)" : "Анализ ключевых слов";
+            string classificationNote = "Автоматическое определение";
 
                         var dueAt = manualDueAt ?? CalculateDeadline(priority);
 
@@ -102,8 +102,8 @@ namespace КР_Ханников.Services
 
                         ticket.History.Add(new TicketHistory
             {
-                Action = "Умная классификация",
-                Details = $"Алгоритм: {aiMethodName}\nКатегория: {category} | Приоритет: {priority}\nСрок (SLA): {dueAt:dd.MM.yy HH:mm}",
+                Action = "Классификация обращения",
+                Details = $"Способ: {classificationNote}\nКатегория: {category} | Приоритет: {priority}\nСрок (SLA): {dueAt:dd.MM.yy HH:mm}",
                 Timestamp = DateTime.UtcNow
             });
 

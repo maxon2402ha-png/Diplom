@@ -64,7 +64,8 @@ namespace КР_Ханников.Services
                 .Append(_mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel"));
 
             var catModel = catPipeline.Fit(dataView);
-            _mlContext.Model.Save(catModel, dataView.Schema, _categoryModelPath);
+            try { _mlContext.Model.Save(catModel, dataView.Schema, _categoryModelPath); }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[ML] Не удалось сохранить модель категории: {ex.Message}"); }
 
             // --- Priority model ---
             var prioPipeline = _mlContext.Transforms.Text.FeaturizeText("TitleFeaturized", nameof(TicketInput.Title))
@@ -75,7 +76,8 @@ namespace КР_Ханников.Services
                 .Append(_mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel"));
 
             var prioModel = prioPipeline.Fit(dataView);
-            _mlContext.Model.Save(prioModel, dataView.Schema, _priorityModelPath);
+            try { _mlContext.Model.Save(prioModel, dataView.Schema, _priorityModelPath); }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[ML] Не удалось сохранить модель приоритета: {ex.Message}"); }
 
             // --- Evaluate and save metrics ---
             try
@@ -111,25 +113,34 @@ namespace КР_Ханников.Services
 
                                 public (TicketCategory Category, TicketPriority Priority) Predict(string title, string description)
         {
-                        if (!File.Exists(_categoryModelPath) || !File.Exists(_priorityModelPath))
+            // Если файл модели отсутствует или повреждён — молча возвращаем безопасные значения по умолчанию.
+            try
             {
+                if (!File.Exists(_categoryModelPath) || !File.Exists(_priorityModelPath))
+                {
+                    return (TicketCategory.Software, TicketPriority.Normal);
+                }
+
+                var input = new TicketInput { Title = title, Description = description };
+
+                ITransformer categoryModel = _mlContext.Model.Load(_categoryModelPath, out var _);
+                var categoryEngine = _mlContext.Model.CreatePredictionEngine<TicketInput, CategoryPrediction>(categoryModel);
+                var catPrediction = categoryEngine.Predict(input);
+
+                ITransformer priorityModel = _mlContext.Model.Load(_priorityModelPath, out var _);
+                var priorityEngine = _mlContext.Model.CreatePredictionEngine<TicketInput, PriorityPrediction>(priorityModel);
+                var prioPrediction = priorityEngine.Predict(input);
+
+                Enum.TryParse<TicketCategory>(catPrediction.PredictedCategory, out var category);
+                Enum.TryParse<TicketPriority>(prioPrediction.PredictedPriority, out var priority);
+
+                return (category, priority);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ML] Не удалось выполнить прогноз, используются значения по умолчанию: {ex.Message}");
                 return (TicketCategory.Software, TicketPriority.Normal);
             }
-
-            var input = new TicketInput { Title = title, Description = description };
-
-                        ITransformer categoryModel = _mlContext.Model.Load(_categoryModelPath, out var _);
-            var categoryEngine = _mlContext.Model.CreatePredictionEngine<TicketInput, CategoryPrediction>(categoryModel);
-            var catPrediction = categoryEngine.Predict(input);
-
-                        ITransformer priorityModel = _mlContext.Model.Load(_priorityModelPath, out var _);
-            var priorityEngine = _mlContext.Model.CreatePredictionEngine<TicketInput, PriorityPrediction>(priorityModel);
-            var prioPrediction = priorityEngine.Predict(input);
-
-                        Enum.TryParse<TicketCategory>(catPrediction.PredictedCategory, out var category);
-            Enum.TryParse<TicketPriority>(prioPrediction.PredictedPriority, out var priority);
-
-            return (category, priority);
         }
     }
 }

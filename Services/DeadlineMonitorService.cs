@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -10,6 +11,7 @@ using КР_Ханников.Data;
 
 namespace КР_Ханников.Services
 {
+    [SupportedOSPlatform("windows")]
     public sealed class DeadlineMonitorService : IDisposable
     {
         private Timer? _timer;

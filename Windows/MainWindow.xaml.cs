@@ -21,7 +21,6 @@ using КР_Ханников.Data;
 using КР_Ханников.Helpers;
 using КР_Ханников.Services;
 using AppConstants = КР_Ханников.Core.Constants;
-using System.Windows.Input;
 
 namespace КР_Ханников.Windows
 {
@@ -161,12 +160,12 @@ namespace КР_Ханников.Windows
             {
                 Interval = TimeSpan.FromMinutes(AppConstants.UI.NotificationCheckIntervalMinutes)
             };
-            _notificationTimer.Tick += (s, e) =>
+            _notificationTimer.Tick += async (s, e) =>
             {
                 try
                 {
                     _notificationService.CheckDueSoonTicketsForCurrentUser();
-                    _notificationService.CheckWorkloadAlertsForCurrentUser();
+                    await _notificationService.CheckWorkloadAlertsForCurrentUserAsync();
                     UpdateNotificationsButtonCaption();
                 }
                 catch { }
@@ -736,7 +735,8 @@ namespace КР_Ханников.Windows
         private void Logout_Click(object sender, RoutedEventArgs e)
         {
             _authService.Logout();
-            new LoginWindow(new AppDbContext(), new AuthService(new AppDbContext())).Show();
+            var loginContext = App.CreateDbContext();
+            new LoginWindow(loginContext, new AuthService(loginContext)).Show();
             Close();
         }
 

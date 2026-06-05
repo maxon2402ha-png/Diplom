@@ -283,7 +283,7 @@ namespace КР_Ханников.Windows
                 {
                     _periodTickets = await db.Tickets
                         .Include(t => t.Solution)
-                        .Include(t => t.Assignee).ThenInclude(a => a.User)
+                        .Include(t => t.Assignee).ThenInclude(a => a!.User)
                         .AsNoTracking()
                         .Where(t => t.CreatedAt >= startUtc && t.CreatedAt <= endUtc)
                         .ToListAsync();

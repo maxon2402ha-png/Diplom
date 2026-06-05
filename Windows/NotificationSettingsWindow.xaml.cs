@@ -51,7 +51,6 @@ namespace КР_Ханников.Windows
                 if (DueSoonThresholdBox != null) DueSoonThresholdBox.Text = _settings.DueSoonThresholdMinutes.ToString();
                 if (SoundCheckBox != null) SoundCheckBox.IsChecked = _settings.PlaySound;
                 if (ToastCheckBox != null) ToastCheckBox.IsChecked = _settings.ShowToast;
-                if (EmailEnabledCheckBox != null) EmailEnabledCheckBox.IsChecked = _settings.EmailEnabled;
 
                                 UpdateDueSoonThresholdPanel();
             }
@@ -123,7 +122,6 @@ namespace КР_Ханников.Windows
                 settings.DueSoonThresholdMinutes = threshold;
                 settings.PlaySound = SoundCheckBox?.IsChecked ?? false;
                 settings.ShowToast = ToastCheckBox?.IsChecked ?? false;
-                settings.EmailEnabled = EmailEnabledCheckBox?.IsChecked ?? false;
 
                 db.SaveChanges();
 

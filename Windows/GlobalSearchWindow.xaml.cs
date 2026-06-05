@@ -107,7 +107,7 @@ namespace КР_Ханников.Windows
 
         private void OpenTicket(int ticketId)
         {
-            var ctx = App.CreateDbContext();
+            using var ctx = App.CreateDbContext();
             var wnd = new TicketDetailsWindow(ticketId, ctx, _authService) { Owner = this };
             wnd.ShowDialog();
         }

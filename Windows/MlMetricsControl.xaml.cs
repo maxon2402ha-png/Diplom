@@ -72,7 +72,7 @@ namespace КР_Ханников.Windows
             macro.Text = $"{m.MacroAccuracy * 100:F1}%";
             loss.Text = m.LogLoss.ToString("F3");
             sample.Text = m.SampleCount.ToString();
-            trained.Text = $"Последнее обучение: {m.TrainedAt.ToLocalTime():dd.MM.yyyy HH:mm}";
+            trained.Text = $"Последняя оценка: {m.TrainedAt.ToLocalTime():dd.MM.yyyy HH:mm}";
         }
 
         private void ResetCards()
@@ -84,7 +84,7 @@ namespace КР_Ханников.Windows
         private async void Retrain_Click(object sender, RoutedEventArgs e)
         {
             RetrainBtn.IsEnabled = false;
-            RetrainBtn.Content = "Обучение...";
+            RetrainBtn.Content = "Обработка...";
 
             try
             {
@@ -96,18 +96,18 @@ namespace КР_Ханников.Windows
                 });
 
                 await LoadMetricsAsync();
-                MessageBox.Show("Модель переобучена и метрики обновлены.", "Готово",
+                MessageBox.Show("Оценка точности обновлена.", "Готово",
                     MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка переобучения: {ex.Message}", "Ошибка",
+                MessageBox.Show($"Ошибка обновления: {ex.Message}", "Ошибка",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 RetrainBtn.IsEnabled = true;
-                RetrainBtn.Content = "🔄 Переобучить и оценить";
+                RetrainBtn.Content = "🔄 Пересчитать";
             }
         }
 

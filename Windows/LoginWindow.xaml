@@ -263,12 +263,6 @@
                                   Foreground="{DynamicResource Brush.TextSecondary}"
                                   FontSize="14" Cursor="Hand"
                                   VerticalAlignment="Center"/>
-                        <Button Content="Забыли пароль?"
-                                HorizontalAlignment="Right" VerticalAlignment="Center"
-                                Background="Transparent" BorderThickness="0"
-                                Foreground="{DynamicResource Brush.Primary}"
-                                FontSize="13" Cursor="Hand"
-                                Click="ForgotPassword_Click"/>
                     </Grid>
 
                     <Button x:Name="LoginButton"

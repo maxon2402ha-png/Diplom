@@ -220,19 +220,6 @@ namespace КР_Ханников.Windows
             catch { }
         }
 
-        private void ForgotPassword_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var wnd = new ForgotPasswordWindow(_context) { Owner = this };
-                wnd.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                ShowError($"Ошибка: {ex.Message}");
-            }
-        }
-
         private void Register_Click(object sender, RoutedEventArgs e)
         {
             try

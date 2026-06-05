@@ -28,12 +28,12 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="Метрики ML-моделей" FontSize="22" FontWeight="Bold"
+                    <TextBlock Text="Качество классификации" FontSize="22" FontWeight="Bold"
                                Foreground="{DynamicResource Brush.TextPrimary}"/>
-                    <TextBlock Text="Качество моделей классификации тикетов по категории и приоритету"
+                    <TextBlock Text="Точность автоматической классификации обращений по категории и приоритету"
                                FontSize="13" Foreground="{DynamicResource Brush.TextSecondary}" Margin="0,4,0,0"/>
                 </StackPanel>
-                <Button Grid.Column="1" Content="🔄 Переобучить и оценить" Height="38" Padding="16,0"
+                <Button Grid.Column="1" Content="🔄 Пересчитать" Height="38" Padding="16,0"
                         FontWeight="SemiBold" FontSize="13" Cursor="Hand"
                         Background="{DynamicResource Brush.Primary}" Foreground="{DynamicResource Brush.TextOnPrimary}"
                         BorderThickness="0" Click="Retrain_Click" x:Name="RetrainBtn">
@@ -57,7 +57,7 @@
 
             <Border Grid.Column="0" Style="{StaticResource MetricCard}">
                 <StackPanel>
-                    <TextBlock Text="📂 Модель категорий" FontSize="14" FontWeight="Bold"
+                    <TextBlock Text="📂 Категории" FontSize="14" FontWeight="Bold"
                                Foreground="{DynamicResource Brush.TextPrimary}" Margin="0,0,0,12"/>
                     <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
@@ -97,7 +97,7 @@
 
             <Border Grid.Column="2" Style="{StaticResource MetricCard}">
                 <StackPanel>
-                    <TextBlock Text="⚡ Модель приоритетов" FontSize="14" FontWeight="Bold"
+                    <TextBlock Text="⚡ Приоритеты" FontSize="14" FontWeight="Bold"
                                Foreground="{DynamicResource Brush.TextPrimary}" Margin="0,0,0,12"/>
                     <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
@@ -142,21 +142,21 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="📊 История обучения" FontSize="14" FontWeight="Bold"
+                <TextBlock Grid.Row="0" Text="📊 История оценок" FontSize="14" FontWeight="Bold"
                            Foreground="{DynamicResource Brush.TextPrimary}" Margin="0,0,0,12"/>
                 <DataGrid Grid.Row="1" x:Name="HistoryGrid" AutoGenerateColumns="False"
                           IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
                           BorderThickness="0" Background="Transparent">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Модель" Binding="{Binding ModelType}" Width="120"/>
-                        <DataGridTextColumn Header="Дата обучения" Binding="{Binding TrainedAt, StringFormat=dd.MM.yyyy HH:mm}" Width="160"/>
+                        <DataGridTextColumn Header="Раздел" Binding="{Binding ModelType}" Width="120"/>
+                        <DataGridTextColumn Header="Дата оценки" Binding="{Binding TrainedAt, StringFormat=dd.MM.yyyy HH:mm}" Width="160"/>
                         <DataGridTextColumn Header="Micro" Binding="{Binding MicroAccuracyDisplay}" Width="100"/>
                         <DataGridTextColumn Header="Macro" Binding="{Binding MacroAccuracyDisplay}" Width="100"/>
                         <DataGridTextColumn Header="Log-loss" Binding="{Binding LogLossDisplay}" Width="100"/>
                         <DataGridTextColumn Header="Выборка" Binding="{Binding SampleCount}" Width="100"/>
                     </DataGrid.Columns>
                 </DataGrid>
-                <TextBlock Grid.Row="1" x:Name="NoMetricsText" Text="Метрики ещё не собраны. Запустите переобучение модели."
+                <TextBlock Grid.Row="1" x:Name="NoMetricsText" Text="Данные ещё не собраны. Нажмите «Пересчитать»."
                            FontSize="13" Foreground="{DynamicResource Brush.TextMuted}"
                            HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
             </Grid>

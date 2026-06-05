@@ -13,7 +13,6 @@ using Serilog;
 using КР_Ханников.Core;
 using КР_Ханников.Services;
 using КР_Ханников.Data;
-using КР_Ханников.Services;
 using КР_Ханников.Windows;
 
 namespace КР_Ханников
@@ -28,6 +27,28 @@ namespace КР_Ханников
         {
             AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
             ConfigureLogging();
+            RegisterGlobalExceptionHandlers();
+        }
+
+        private void RegisterGlobalExceptionHandlers()
+        {
+            // Исключения UI-потока — приложение продолжает работу (e.Handled = true).
+            DispatcherUnhandledException += App_DispatcherUnhandledException;
+
+            // Фатальные исключения фоновых потоков — логируем перед завершением процесса.
+            AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+            {
+                var ex = args.ExceptionObject as Exception
+                         ?? new Exception($"Неизвестная ошибка: {args.ExceptionObject}");
+                LogUnhandled("Фоновый поток", ex);
+            };
+
+            // Несоблюдённые (unobserved) исключения задач — гасим, чтобы не уронить процесс.
+            TaskScheduler.UnobservedTaskException += (_, args) =>
+            {
+                LogUnhandled("Фоновая задача", args.Exception);
+                args.SetObserved();
+            };
         }
 
         private static void ConfigureLogging()
@@ -54,34 +75,17 @@ namespace КР_Ханников
                 new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(culture.IetfLanguageTag)));
 
             base.OnStartup(e);
-            this.DispatcherUnhandledException += App_DispatcherUnhandledException;
 
             try
             {
                 using (var context = CreateDbContext())
                 {
-                    context.Database.EnsureCreated();
+                    InitializeDatabase(context);
                     EnsureAdminExists(context);
-                    // Run async seeding on a thread-pool thread to avoid an async-over-sync
-                    // deadlock on the WPF UI thread when seeding a fresh/empty database.
+                    // Сидирование выполняем на пуле потоков, чтобы избежать
+                    // async-over-sync дедлока на UI-потоке при пустой БД.
                     Task.Run(() => DbSeeder.SeedAsync(context)).GetAwaiter().GetResult();
                 }
-
-                Task.Run(() =>
-                {
-                    try
-                    {
-                        using var mlContext = CreateDbContext();
-                        var classifier = new MlTicketClassifier();
-                        classifier.TrainModels(mlContext);
-                        Debug.WriteLine("[ML] Модель успешно обучена на исторических данных!");
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Warning(ex, "[ML] Ошибка обучения модели");
-                        Debug.WriteLine($"[ML Error] Ошибка обучения: {ex.Message}");
-                    }
-                });
 
                 _deadlineMonitor = new DeadlineMonitorService();
                 _deadlineMonitor.Start();
@@ -93,13 +97,58 @@ namespace КР_Ханников
                 var authService = new AuthService(loginContext);
                 var loginWindow = new LoginWindow(loginContext, authService);
                 loginWindow.Show();
+
+                // Фоновое обучение модели запускается ПОСЛЕ показа окна
+                // и ни при каких условиях не роняет приложение.
+                StartBackgroundModelTraining();
+            }
+            catch (Exception ex) when (IsDatabaseUnavailable(ex))
+            {
+                LogUnhandled("Запуск: БД недоступна", ex);
+                MessageBox.Show(
+                    "Не удалось подключиться к базе данных.\n\n" +
+                    "Проверьте, запущен ли сервер PostgreSQL, и параметры подключения, " +
+                    "затем запустите приложение снова.",
+                    "База данных недоступна",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                Shutdown();
             }
             catch (Exception ex)
             {
-                Log.Fatal(ex, "Критическая ошибка при запуске приложения");
+                LogUnhandled("Запуск приложения", ex);
                 ShowErrorDialog("Не удалось запустить приложение", ex);
                 Shutdown();
             }
+        }
+
+        private static void InitializeDatabase(AppDbContext context)
+        {
+            try
+            {
+                // Применяем миграции: для новой БД создаётся актуальная схема,
+                // для управляемой миграциями — применяются недостающие (включая RemoveEmailFeatures).
+                context.Database.Migrate();
+            }
+            catch (Exception ex) when (!IsDatabaseUnavailable(ex))
+            {
+                // БД существует, но не велась миграциями (создана ранее через EnsureCreated()).
+                // Её схема совместима с моделью — продолжаем работу, зафиксировав предупреждение.
+                Log.Warning(ex, "Database.Migrate() пропущен: используется существующая схема БД");
+            }
+        }
+
+        // Отличает «сервер БД недоступен» (PostgreSQL выключен/недостижим)
+        // от ошибок уровня самой БД (на которые сервер ответил).
+        private static bool IsDatabaseUnavailable(Exception? ex)
+        {
+            for (var e = ex; e != null; e = e.InnerException)
+            {
+                if (e is Npgsql.PostgresException) return false;   // сервер ответил — он доступен
+                if (e is Npgsql.NpgsqlException) return true;       // не удалось соединиться
+                if (e is System.Net.Sockets.SocketException) return true;
+                if (e is TimeoutException) return true;
+            }
+            return false;
         }
 
         protected override void OnExit(ExitEventArgs e)
@@ -179,20 +228,58 @@ namespace КР_Ханников
 
         private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
-            Log.Error(e.Exception, "Необработанное исключение в UI-потоке");
+            LogUnhandled("UI-поток", e.Exception);
 
             try
             {
-                ShowErrorDialog("В приложении произошла непредвиденная ошибка", e.Exception);
+                ShowErrorDialog("Произошла ошибка, приложение продолжит работу", e.Exception);
             }
             catch
             {
-                MessageBox.Show(
-                    $"Критическая ошибка:\n{e.Exception.Message}",
-                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                try
+                {
+                    MessageBox.Show(
+                        $"Произошла ошибка, приложение продолжит работу.\n\n{e.Exception.Message}",
+                        "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+                catch { }
             }
 
+            // Не даём UI-исключению уронить приложение.
             e.Handled = true;
+        }
+
+        // Единая точка логирования необработанных исключений: Serilog + файл logs/error-{date}.log.
+        private static void LogUnhandled(string source, Exception ex)
+        {
+            try { Log.Error(ex, "Необработанное исключение ({Source})", source); } catch { }
+            WriteErrorLog(source, ex);
+        }
+
+        private static void WriteErrorLog(string source, Exception ex)
+        {
+            try
+            {
+                var logsPath = Constants.Database.GetLogsPath();
+                Directory.CreateDirectory(logsPath);
+                var file = Path.Combine(logsPath, $"error-{DateTime.Now:yyyy-MM-dd}.log");
+
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("======================================================");
+                sb.AppendLine($"Дата:      {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                sb.AppendLine($"Источник:  {source}");
+                sb.AppendLine($"Тип:       {ex.GetType().FullName}");
+                sb.AppendLine($"Сообщение: {ex.Message}");
+                sb.AppendLine("Stack trace:");
+                sb.AppendLine(ex.StackTrace);
+                if (ex.InnerException != null)
+                {
+                    sb.AppendLine($"Внутреннее: {ex.InnerException.GetType().FullName}: {ex.InnerException.Message}");
+                    sb.AppendLine(ex.InnerException.StackTrace);
+                }
+                File.AppendAllText(file, sb.ToString());
+            }
+            catch { /* логирование не должно само бросать исключения */ }
         }
 
         private static void ShowErrorDialog(string summary, Exception ex)
@@ -224,6 +311,25 @@ namespace КР_Ханников
             }
 
             return sb.ToString();
+        }
+
+        private static void StartBackgroundModelTraining()
+        {
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    using var trainingContext = CreateDbContext();
+                    var classifier = new MlTicketClassifier();
+                    classifier.TrainModels(trainingContext);
+                }
+                catch (Exception ex)
+                {
+                    // Любая ошибка фонового обучения только логируется и не всплывает наружу.
+                    try { Log.Warning(ex, "Фоновое обучение модели завершилось ошибкой"); }
+                    catch { }
+                }
+            });
         }
 
         public static AppDbContext CreateDbContext()
