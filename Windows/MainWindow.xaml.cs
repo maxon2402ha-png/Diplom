@@ -218,10 +218,15 @@ namespace КР_Ханников.Windows
                 MessageBox.Show("Доступ запрещен.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
-        // Раздел аналитики KPI и нагрузки. Это UserControl, поэтому
-        // встраивается в главное окно через SwitchPage, как и Дашборд.
+        // Системная аналитика (KPI всех операторов, нагрузка, прогнозы, экспорт) —
+        // только администратору. Оператору доступен лишь личный дашборд.
         private void OpenAnalytics_Click(object sender, RoutedEventArgs e)
-            => SwitchPage(OpenAnalyticsButton, new AnalyticsControl());
+        {
+            if (Constants.UserRoles.IsAdmin(_authService.CurrentUser?.Role))
+                SwitchPage(OpenAnalyticsButton, new AnalyticsControl());
+            else
+                MessageBox.Show("Доступ запрещен.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
 
         private void OpenKnowledgeBase_Click(object sender, RoutedEventArgs e)
             => SwitchPage(OpenKnowledgeBaseButton, new KnowledgeBaseControl(_context, _authService));
@@ -564,7 +569,16 @@ namespace КР_Ханников.Windows
                 }
                 else
                 {
-                    // Оператор берёт тикет в работу на себя (с проверкой лимита нагрузки).
+                    // Оператор берёт в работу только НЕРАСПРЕДЕЛЁННЫЙ тикет (самоназначение).
+                    // Переназначение уже назначенного тикета — только администратору.
+                    if (s.AssigneeEmployeeId.HasValue)
+                    {
+                        MessageBox.Show("Тикет уже назначен. Переназначение доступно только администратору.",
+                            "Назначение невозможно", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    // Самоназначение (с проверкой лимита нагрузки внутри AssignAsync).
                     var eid = await GetCurrentEmployeeIdOrNullAsync();
                     if (eid != null)
                     {

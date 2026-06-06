@@ -481,9 +481,6 @@
 
                         <TextBlock Text="Текущий статус:" FontSize="12" Foreground="{DynamicResource Brush.TextSecondary}" Margin="0,8,0,4"/>
                         <ComboBox x:Name="StatusCombo" Height="30" Margin="0,0,0,12" SelectionChanged="StatusCombo_SelectionChanged"/>
-
-                        <TextBlock Text="Приоритет:" FontSize="12" Foreground="{DynamicResource Brush.TextSecondary}" Margin="0,0,0,4"/>
-                        <ComboBox x:Name="PriorityCombo" Height="30" Margin="0,0,0,12" SelectionChanged="PriorityCombo_SelectionChanged"/>
                     </StackPanel>
                 </Border>
 

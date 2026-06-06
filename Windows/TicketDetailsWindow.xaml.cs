@@ -94,8 +94,9 @@ namespace КР_Ханников.Windows
 
         private void SetupComboBoxes()
         {
-                        StatusCombo.ItemsSource = Ticket.AllStatuses;
-            PriorityCombo.ItemsSource = Enum.GetValues(typeof(TicketPriority));
+            // Приоритет вручную не меняется (только авто), поэтому редактируемого
+            // списка приоритетов здесь нет — статус остаётся.
+            StatusCombo.ItemsSource = Ticket.AllStatuses;
         }
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -169,7 +170,6 @@ namespace КР_Ханников.Windows
                 PriorityText.Text = _ticket.Priority.ToString();
 
                 StatusCombo.SelectedItem = _ticket.Status;
-                PriorityCombo.SelectedItem = _ticket.Priority;
 
                 DataContext = _ticket;
 
@@ -197,19 +197,22 @@ namespace КР_Ханников.Windows
             var user = _authService.CurrentUser;
             if (user == null) return;
 
-            bool isClient = user.Role == Constants.UserRoles.Client;
+            bool isClient = Constants.UserRoles.IsClient(user.Role);
+            bool isAdmin = Constants.UserRoles.IsAdmin(user.Role);
+            bool isEmployee = Constants.UserRoles.IsEmployee(user.Role); // Support или Admin
             bool isClosed = _ticket.Status == Constants.TicketStatus.Closed;
             bool isResolved = _ticket.Status == Constants.TicketStatus.Resolved;
-            bool isSupport = user.Role == Constants.UserRoles.Support || user.Role == Constants.UserRoles.Admin;
 
-            OperatorControlsPanel.Visibility = (isSupport && !isClosed && !isResolved) ? Visibility.Visible : Visibility.Collapsed;
-            InternalCheck.Visibility = isSupport ? Visibility.Visible : Visibility.Collapsed;
+            // Панель управления (смена статуса) — операторам/админам, пока тикет не закрыт/не решён.
+            OperatorControlsPanel.Visibility = (isEmployee && !isClosed && !isResolved) ? Visibility.Visible : Visibility.Collapsed;
+            InternalCheck.Visibility = isEmployee ? Visibility.Visible : Visibility.Collapsed;
             InternalCheck.IsChecked = false;
 
             if (isClient)
             {
                 CloseTicketButton.Visibility = Visibility.Collapsed;
-                EditButton.Visibility = Visibility.Collapsed;
+                // Клиент правит тему/описание своего обращения, пока оно не закрыто.
+                EditButton.Visibility = isClosed ? Visibility.Collapsed : Visibility.Visible;
 
                 if (isResolved && FindName("ClientConfirmPanel") is System.Windows.Controls.Border confirmPanel)
                 {
@@ -246,6 +249,10 @@ namespace КР_Ханников.Windows
                 if (FindName("ClientConfirmPanel") is System.Windows.Controls.Border cp4)
                     cp4.Visibility = Visibility.Collapsed;
                 CloseTicketButton.Visibility = (isClosed || isResolved) ? Visibility.Collapsed : Visibility.Visible;
+
+                // Текст запроса операторы не правят. Категорию меняет только администратор,
+                // поэтому кнопка «Редактировать» доступна оператору-администратору и скрыта у Support.
+                EditButton.Visibility = isAdmin ? Visibility.Visible : Visibility.Collapsed;
             }
         }
 
@@ -468,39 +475,6 @@ namespace КР_Ханников.Windows
             }
         }
 
-        private async void PriorityCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (_isInitializing || PriorityCombo.SelectedItem == null) return;
-
-            var newPriority = (TicketPriority)PriorityCombo.SelectedItem;
-
-            try
-            {
-                using var db = App.CreateDbContext();
-                var ticket = await db.Tickets.FindAsync(_ticketId);
-
-                if (ticket != null && ticket.Priority != newPriority)
-                {
-                    ticket.Priority = newPriority;
-
-                    db.TicketHistories.Add(new TicketHistory
-                    {
-                        TicketId = _ticketId,
-                        Action = "Изменение приоритета",
-                        Details = $"Приоритет изменен на {newPriority}",
-                        Timestamp = DateTime.UtcNow
-                    });
-
-                    await db.SaveChangesAsync();
-                    await LoadTicketDataAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка при смене приоритета: {ex.Message}");
-            }
-        }
-
         private void SetupWorkTimer()
         {
             _timer?.Stop();
@@ -535,7 +509,8 @@ namespace КР_Ханников.Windows
             if (string.IsNullOrWhiteSpace(resolutionText))
                 return;
 
-            // Необязательная привязка статьи базы знаний к решению.
+            // Необязательная вставка статьи базы знаний в решение (видна клиенту).
+            int? linkedArticleId = resolveWnd.SelectedArticle?.Id;
             if (resolveWnd.SelectedArticle != null)
                 resolutionText += $"\n\nСтатья базы знаний: {resolveWnd.SelectedArticle.Title} (#{resolveWnd.SelectedArticle.Id})";
 
@@ -554,6 +529,7 @@ namespace КР_Ханников.Windows
                     {
                         TicketId = _ticketId,
                         ResolutionText = resolutionText,
+                        KnowledgeArticleId = linkedArticleId,
                         ResolutionDate = DateTime.UtcNow
                     });
 
@@ -585,7 +561,7 @@ namespace КР_Ханников.Windows
 
         private async void Edit_Click(object sender, RoutedEventArgs e)
         {
-            var editWin = new EditTicketWindow(_ticketId, _context) { Owner = this };
+            var editWin = new EditTicketWindow(_ticketId, _context, _authService) { Owner = this };
             if (editWin.ShowDialog() == true)
             {
                 await LoadTicketDataAsync();
