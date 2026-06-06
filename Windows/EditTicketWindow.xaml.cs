@@ -106,6 +106,10 @@ namespace КР_Ханников.Windows
             PriorityComboBox.IsEnabled = false;
             KbBindingPanel.Visibility = Visibility.Collapsed;
 
+            // Категорию/приоритет показываем только администратору (он меняет категорию).
+            // Для клиента это «простое окно правки только Темы и Описания».
+            CategoryPriorityRow.Visibility = isAdmin ? Visibility.Visible : Visibility.Collapsed;
+
             if (isAdmin)
                 SubtitleText.Text = "Администратор может изменить только категорию обращения.";
             else if (_canEditText)
